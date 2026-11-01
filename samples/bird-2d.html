@@ -1,0 +1,305 @@
+<title>2D 오목눈이 샘플</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  /* layout: 가운데 큰 무대 하나 + 아래 조작 칩 + 게임 크기 비교 줄 */
+  --bg:#FBF3FF;
+  --paper:#FFFFFF;
+  --line:#8E7CC3;
+  --lilac:#E4DAF6;
+  --lilac-deep:#B9A4E6;
+  --pink:#F7B3CB;
+  --pink-deep:#E2719A;
+  --ink:#4A3A5C;
+  --ink-soft:#8C7FA3;
+  --butter:#FFE59A;
+  --f-display:"Jua","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  color-scheme:light;
+}
+html,body{min-height:100%}
+body{margin:0;background:radial-gradient(circle at 22px 22px,rgba(185,164,230,.18) 5px,transparent 6px) 0 0/52px 52px,var(--bg);color:var(--ink);font-family:var(--f-body);
+  -webkit-tap-highlight-color:transparent}
+.page{max-width:900px;margin:0 auto;padding-block:24px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(32px,6vw,48px);color:#7A5FC0;text-align:center;text-wrap:balance}
+.lead{margin:0 auto;max-width:60ch;text-align:center;font-size:17px;line-height:1.6;color:var(--ink-soft)}
+.stage{position:relative;background:linear-gradient(#F3E8FF 0%,#FFEAF3 60%,#FFF7E6 100%);border-radius:36px;box-shadow:0 8px 0 #EADCF7;height:min(440px,62vw);min-height:300px;overflow:hidden;cursor:pointer;touch-action:manipulation}
+.stage::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 12% 20%,#fff 2px,transparent 3px),radial-gradient(circle at 84% 16%,#fff 3px,transparent 4px),
+  radial-gradient(circle at 70% 40%,#fff 2px,transparent 3px),radial-gradient(circle at 26% 56%,#fff 2px,transparent 3px);opacity:.9}
+.ground{position:absolute;left:0;right:0;bottom:0;height:22%;background:#FFF1D6;border-top:4px dashed #F4DDB2}
+.walker{position:absolute;left:50%;bottom:8%;width:min(340px,58%);transform:translateX(-50%)}
+.walker.walking{animation:walk 9s linear infinite}
+.walker .flip{transition:transform .3s}
+.walker svg{width:100%;display:block;overflow:visible}
+.hint{position:absolute;top:14px;left:0;right:0;text-align:center;font-family:var(--f-display);font-size:18px;color:var(--ink-soft)}
+
+.controls{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.row .lbl{font-family:var(--f-display);font-size:20px;color:var(--ink-soft);width:64px;flex:none}
+.chips{display:flex;gap:8px;flex-wrap:wrap;min-width:0}
+.chip{font-family:var(--f-display);font-size:19px;border:3px solid #E6DAF5;background:var(--paper);color:var(--ink);border-radius:999px;padding:7px 16px;cursor:pointer;box-shadow:0 4px 0 #E6DAF5}
+.chip:active{transform:translateY(3px);box-shadow:0 1px 0 #E6DAF5}
+.chip.on{background:#EFE6FF;border-color:var(--lilac-deep);color:#6B4FB8}
+.chip:focus-visible{outline:4px solid var(--butter);outline-offset:2px}
+
+.compare{background:var(--paper);border-radius:28px;box-shadow:0 6px 0 #EADCF7;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.compare h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:24px;color:#7A5FC0}
+.compare p{margin:0;font-size:15px;color:var(--ink-soft);line-height:1.5}
+.mini-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.mini{display:flex;flex-direction:column;align-items:center;gap:4px;background:#FBF6FF;border-radius:20px;padding:10px 4px 8px;cursor:pointer;border:0;font:inherit;color:inherit}
+.mini svg{width:100%;max-width:110px;display:block;overflow:visible}
+.mini span{font-family:var(--f-display);font-size:16px;color:var(--ink-soft)}
+@media (max-width:560px){ .mini-row{grid-template-columns:repeat(3,minmax(0,1fr))} .mini:nth-child(n+4){display:none} }
+
+/* ---------- 오목눈이 애니메이션 ---------- */
+.om .breath{transform-origin:120px 210px;animation:breathe 3.2s ease-in-out infinite}
+.om .eyes-open{transform-box:fill-box;transform-origin:center;animation:blink 4.2s infinite}
+.om .wing-f{transform-origin:170px 156px;transition:transform .25s}
+.om .wing-b{transform-origin:72px 156px;transition:transform .25s}
+.om .tail{transform-origin:182px 150px;animation:tailWag 2.6s ease-in-out infinite}
+.om .halo{animation:float 2s ease-in-out infinite}
+.om .face > g{display:none}
+.om[data-mood="normal"] .f-normal,.om[data-mood="happy"] .f-happy,.om[data-mood="sad"] .f-sad,.om[data-mood="wow"] .f-wow,.om[data-mood="yum"] .f-yum{display:inline}
+.om .held,.om .bang,.om .tear{display:none}
+.om .acc > g{display:none}
+.om[data-acc="bow"] .a-bow,.om[data-acc="witch"] .a-witch,.om[data-acc="chef"] .a-chef,.om[data-acc="mandarin"] .a-mandarin,.om[data-acc="halo"] .a-halo{display:inline}
+
+.om[data-mood="happy"] .hopper{animation:hop .55s ease-in-out infinite}
+.om[data-mood="happy"] .wing-f{animation:flapF .28s ease-in-out infinite alternate}
+.om[data-mood="happy"] .wing-b{animation:flapB .28s ease-in-out infinite alternate}
+.om[data-mood="sad"] .breath{animation:breatheSad 4.5s ease-in-out infinite}
+.om[data-mood="sad"] .wing-f{transform:rotate(18deg)}
+.om[data-mood="sad"] .tail{animation:none;transform:rotate(14deg)}
+.om[data-mood="sad"] .tear{display:inline;animation:tear 1.8s ease-in infinite}
+.om[data-mood="wow"] .hopper{animation:jump .5s ease-out}
+.om[data-mood="wow"] .wing-f{transform:rotate(-55deg)}
+.om[data-mood="wow"] .wing-b{transform:rotate(55deg)}
+.om[data-mood="wow"] .bang{display:inline;animation:pop .35s}
+.om[data-mood="yum"] .held{display:inline}
+.om[data-mood="yum"] .chew{transform-box:fill-box;transform-origin:50% 0;animation:chew .35s ease-in-out infinite alternate}
+.om[data-mood="yum"] .breath{animation:breathe 1.4s ease-in-out infinite}
+.walking .om .hopper{animation:waddle .5s ease-in-out infinite}
+.walking.happy-walk .om .hopper{animation:hop .55s ease-in-out infinite}
+
+.heart{position:absolute;pointer-events:none;width:30px;animation:heartUp 1.3s ease-out forwards}
+
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.025,.975)}}
+@keyframes breatheSad{0%,100%{transform:scale(1.03,.95)}50%{transform:scale(1.05,.93)}}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
+@keyframes tailWag{0%,100%{transform:rotate(0)}50%{transform:rotate(-7deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}45%{transform:translateY(-26px)}}
+@keyframes jump{0%{transform:translateY(0)}40%{transform:translateY(-34px)}100%{transform:translateY(0)}}
+@keyframes waddle{0%,100%{transform:rotate(-4deg) translateY(0)}50%{transform:rotate(4deg) translateY(-6px)}}
+@keyframes flapF{from{transform:rotate(-10deg)}to{transform:rotate(-58deg)}}
+@keyframes flapB{from{transform:rotate(10deg)}to{transform:rotate(58deg)}}
+@keyframes chew{from{transform:scaleY(.4)}to{transform:scaleY(1.2)}}
+@keyframes tear{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(22px);opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes heartUp{0%{transform:translate(-50%,0) scale(.4);opacity:0}20%{opacity:1;transform:translate(-50%,-20px) scale(1.1)}100%{transform:translate(calc(-50% + var(--dx,0px)),-130px) scale(.9);opacity:0}}
+@keyframes walk{0%{left:22%}45%{left:78%}50%{left:78%}95%{left:22%}100%{left:22%}}
+@media (prefers-reduced-motion:reduce){ .om *{animation:none!important} .walker.walking{animation:none} }
+</style>
+
+<main class="page">
+  <h1>2D 오목눈이 샘플</h1>
+  <p class="lead">코드로 그린 오목눈이예요. 몸통·날개·꼬리·눈을 따로 그려서 표정을 바꾸고 날개를 파닥일 수 있어요. 오목눈이를 톡 누르면 좋아해요.</p>
+
+  <div class="stage" id="stage" role="button" aria-label="오목눈이 쓰다듬기">
+    <div class="hint" id="hint">오목눈이를 톡!</div>
+    <div class="ground"></div>
+    <div class="walker" id="walker"><div class="flip" id="flip"></div></div>
+  </div>
+
+  <div class="controls">
+    <div class="row"><span class="lbl">표정</span><div class="chips" id="moods">
+      <button class="chip on" data-mood="normal">기본</button>
+      <button class="chip" data-mood="happy">기쁨</button>
+      <button class="chip" data-mood="sad">시무룩</button>
+      <button class="chip" data-mood="wow">깜짝</button>
+      <button class="chip" data-mood="yum">냠냠</button>
+    </div></div>
+    <div class="row"><span class="lbl">꾸미기</span><div class="chips" id="accs">
+      <button class="chip on" data-acc="none">없음</button>
+      <button class="chip" data-acc="bow">리본</button>
+      <button class="chip" data-acc="witch">마녀 모자</button>
+      <button class="chip" data-acc="chef">셰프 모자</button>
+      <button class="chip" data-acc="mandarin">귤</button>
+      <button class="chip" data-acc="halo">천사 링</button>
+    </div></div>
+    <div class="row"><span class="lbl">움직임</span><div class="chips">
+      <button class="chip" id="btn-walk">통통 걷기</button>
+    </div></div>
+  </div>
+
+  <section class="compare">
+    <h2>게임 속 크기로 보면</h2>
+    <p>손님 자리에 들어갈 크기예요. 꾸미기만 바꿔도 손님 종류가 늘어나요. 눌러 보세요.</p>
+    <div class="mini-row" id="minis"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+'use strict';
+const LINE = '#8E7CC3', EYE = '#33284A', BEAK = '#F2A65A', BEAK_D = '#C9803C';
+
+function birdSVG(mood = 'normal', acc = 'none'){
+  return `<svg class="om" data-mood="${mood}" data-acc="${acc}" viewBox="0 -30 270 260" aria-hidden="true">
+  <ellipse cx="120" cy="222" rx="74" ry="9" fill="#E7D8F2"/>
+  <g class="hopper"><g class="breath">
+    <!-- 꼬리 -->
+    <g class="tail">
+      <path d="M176 142Q226 146 258 178Q238 190 218 180Q236 198 226 208Q198 192 174 170Z" fill="#D9C6F2" stroke="${LINE}" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M190 158Q220 166 240 182" stroke="#F3B2CF" stroke-width="5" fill="none" stroke-linecap="round"/>
+    </g>
+    <!-- 뒤쪽 날개 -->
+    <path class="wing-b" d="M74 150C46 142 32 166 40 188C46 206 70 204 76 186C80 172 82 154 74 150Z" fill="#E4DAF6" stroke="${LINE}" stroke-width="5" stroke-linejoin="round"/>
+    <!-- 발 -->
+    <g stroke="${BEAK}" stroke-width="5" stroke-linecap="round" fill="none"><path d="M104 200v14M96 216h16"/><path d="M138 200v14M130 216h16"/></g>
+    <!-- 몸통 -->
+    <path d="M120 62C172 62 200 100 200 140C200 184 166 208 120 208C74 208 40 184 40 140C40 100 68 62 120 62Z" fill="#fff" stroke="${LINE}" stroke-width="5"/>
+    <ellipse cx="116" cy="168" rx="46" ry="30" fill="#FFF8F2"/>
+    <path d="M110 64q2-16 14-20M122 64q6-12 16-12" stroke="${LINE}" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <!-- 볼 -->
+    <ellipse cx="76" cy="140" rx="12" ry="7.5" fill="#F7B3CB" opacity=".85"/>
+    <ellipse cx="160" cy="140" rx="12" ry="7.5" fill="#F7B3CB" opacity=".85"/>
+    <!-- 얼굴 -->
+    <g class="face">
+      <g class="f-normal">
+        <g class="eyes-open"><ellipse cx="94" cy="122" rx="6.5" ry="8" fill="${EYE}"/><ellipse cx="142" cy="122" rx="6.5" ry="8" fill="${EYE}"/><circle cx="96.5" cy="118.5" r="2.4" fill="#fff"/><circle cx="144.5" cy="118.5" r="2.4" fill="#fff"/></g>
+        <path d="M112 133h12l-6 8z" fill="${BEAK}" stroke="${BEAK_D}" stroke-width="2" stroke-linejoin="round"/>
+      </g>
+      <g class="f-happy">
+        <path d="M85 124q9-12 18 0M133 124q9-12 18 0" stroke="${EYE}" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M111 132h14l-7 6z" fill="${BEAK}" stroke="${BEAK_D}" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M112 138q6 10 12 0z" fill="#E0607A"/>
+      </g>
+      <g class="f-sad">
+        <path d="M84 110l16-5M152 110l-16-5" stroke="${EYE}" stroke-width="4" stroke-linecap="round"/>
+        <ellipse cx="94" cy="124" rx="5" ry="5.5" fill="${EYE}"/><ellipse cx="142" cy="124" rx="5" ry="5.5" fill="${EYE}"/>
+        <path d="M112 135h12l-6 7z" fill="${BEAK}" stroke="${BEAK_D}" stroke-width="2" stroke-linejoin="round"/>
+        <path class="tear" d="M84 132q-5 8 0 11q5-3 0-11z" fill="#9CCBF5"/>
+      </g>
+      <g class="f-wow">
+        <circle cx="94" cy="121" r="10" fill="${EYE}"/><circle cx="142" cy="121" r="10" fill="${EYE}"/>
+        <circle cx="97.5" cy="116.5" r="3.5" fill="#fff"/><circle cx="145.5" cy="116.5" r="3.5" fill="#fff"/><circle cx="91" cy="125" r="1.6" fill="#fff"/><circle cx="139" cy="125" r="1.6" fill="#fff"/>
+        <path d="M112 133h12l-6 6z" fill="${BEAK}" stroke="${BEAK_D}" stroke-width="2" stroke-linejoin="round"/>
+        <ellipse cx="118" cy="146" rx="5" ry="6.5" fill="#E0607A"/>
+        <g class="bang"><path d="M206 40l-6 30" stroke="#F2A65A" stroke-width="7" stroke-linecap="round"/><circle cx="197" cy="84" r="4.5" fill="#F2A65A"/><path d="M226 56l-14 18" stroke="#F2A65A" stroke-width="5" stroke-linecap="round"/></g>
+      </g>
+      <g class="f-yum">
+        <path d="M85 124q9-12 18 0M133 124q9-12 18 0" stroke="${EYE}" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M111 132h14l-7 6z" fill="${BEAK}" stroke="${BEAK_D}" stroke-width="2" stroke-linejoin="round"/>
+        <path class="chew" d="M113 138h10l-5 6z" fill="${BEAK_D}"/>
+      </g>
+    </g>
+    <!-- 들고 있는 아이스크림 -->
+    <g class="held">
+      <path d="M58 168h30l-15 34z" fill="#F2C27B" stroke="#C98C3E" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M64 174l18 14M78 170l-14 18" stroke="#C98C3E" stroke-width="2"/>
+      <circle cx="73" cy="156" r="17" fill="#F9B3C6" stroke="#E07A98" stroke-width="3"/>
+      <circle cx="67" cy="152" r="2.4" fill="#D9365B"/><circle cx="79" cy="158" r="2.4" fill="#D9365B"/><circle cx="74" cy="147" r="2" fill="#D9365B"/>
+      <circle cx="73" cy="137" r="5" fill="#E53950"/>
+    </g>
+    <!-- 앞쪽 날개 -->
+    <path class="wing-f" d="M166 148C194 142 208 168 200 190C192 208 168 204 162 186C158 172 156 152 166 148Z" fill="#E4DAF6" stroke="${LINE}" stroke-width="5" stroke-linejoin="round"/>
+    <!-- 꾸미기 -->
+    <g class="acc">
+      <g class="a-bow" transform="translate(152 72) rotate(18)">
+        <path d="M0 0L-26-16q-6 16 0 32z" fill="#F7A8C8" stroke="${LINE}" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M0 0L26-16q6 16 0 32z" fill="#F7A8C8" stroke="${LINE}" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="-14" cy="-3" r="2.6" fill="#fff"/><circle cx="-17" cy="7" r="2.2" fill="#fff"/><circle cx="14" cy="-3" r="2.6" fill="#fff"/><circle cx="17" cy="7" r="2.2" fill="#fff"/>
+        <circle r="7" fill="#F48FB1" stroke="${LINE}" stroke-width="4"/>
+      </g>
+      <g class="a-witch">
+        <path d="M80 70Q108 18 150 -18Q138 24 164 70Z" fill="#8F72D6" stroke="${LINE}" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M150 -18q14 4 18 18" stroke="${LINE}" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <ellipse cx="122" cy="70" rx="62" ry="12" fill="#A78BE6" stroke="${LINE}" stroke-width="5"/>
+        <path d="M88 60q34 8 70 0" stroke="#F7B3CB" stroke-width="8" fill="none"/>
+        <path d="M124 26l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z" fill="#FFE07A"/>
+      </g>
+      <g class="a-chef">
+        <rect x="90" y="48" width="62" height="20" rx="6" fill="#fff" stroke="${LINE}" stroke-width="5"/>
+        <path d="M92 50c-18-6-16-34 4-32c2-18 30-22 36-6c14-10 34 2 26 20c-2 10-8 16-14 18z" fill="#fff" stroke="${LINE}" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M112 52v-10M130 52v-12" stroke="#E4DAF6" stroke-width="4" stroke-linecap="round"/>
+      </g>
+      <g class="a-mandarin">
+        <circle cx="122" cy="46" r="24" fill="#FFA94D" stroke="#D97E2A" stroke-width="5"/>
+        <circle cx="112" cy="38" r="5" fill="#FFD3A0"/>
+        <path d="M122 22q2-8 0-10" stroke="#6B8E3A" stroke-width="4" stroke-linecap="round"/>
+        <path d="M124 18q14-10 24 0q-12 8-24 0z" fill="#8BCF7A" stroke="#5FA650" stroke-width="3"/>
+      </g>
+      <g class="a-halo"><g class="halo"><ellipse cx="120" cy="30" rx="34" ry="9" fill="none" stroke="#F5C94C" stroke-width="7"/><ellipse cx="120" cy="30" rx="34" ry="9" fill="none" stroke="#FFF1B8" stroke-width="2"/></g></g>
+    </g>
+  </g></g>
+</svg>`;
+}
+
+const flip = document.getElementById('flip');
+const walker = document.getElementById('walker');
+const stage = document.getElementById('stage');
+let mood = 'normal', acc = 'none', walking = false, burstT = 0;
+function render(m = mood){ flip.innerHTML = birdSVG(m, acc); }
+render();
+
+function setChip(groupId, attr, val){ document.querySelectorAll(`#${groupId} .chip`).forEach(c => c.classList.toggle('on', c.dataset[attr] === val)); }
+document.getElementById('moods').addEventListener('click', e => {
+  const c = e.target.closest('[data-mood]'); if (!c) return;
+  mood = c.dataset.mood; setChip('moods', 'mood', mood); clearTimeout(burstT); render();
+});
+document.getElementById('accs').addEventListener('click', e => {
+  const c = e.target.closest('[data-acc]'); if (!c) return;
+  acc = c.dataset.acc; setChip('accs', 'acc', acc); render(flip.querySelector('svg').dataset.mood);
+});
+const HEART = '<svg viewBox="0 0 24 22"><path d="M12 21C5 15.5 1 12 1 7a5.5 5.5 0 0 1 11-2.5A5.5 5.5 0 0 1 23 7c0 5-4 8.5-11 14z" fill="#F0628F"/></svg>';
+function hearts(container, cx, cy, n = 5){
+  for (let i = 0; i < n; i++){
+    const h = document.createElement('div'); h.className = 'heart'; h.innerHTML = HEART;
+    h.style.left = cx + 'px'; h.style.top = cy + 'px'; h.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+    h.style.animationDelay = (i * .08) + 's';
+    container.appendChild(h); setTimeout(() => h.remove(), 1600);
+  }
+}
+stage.addEventListener('click', e => {
+  if (e.target.closest('.chip')) return;
+  const sr = stage.getBoundingClientRect(), wr = walker.getBoundingClientRect();
+  render('happy');
+  hearts(stage, wr.left - sr.left + wr.width / 2, wr.top - sr.top + wr.height * .25, 6);
+  document.getElementById('hint').textContent = '좋아요!';
+  clearTimeout(burstT);
+  burstT = setTimeout(() => { render(); document.getElementById('hint').textContent = '오목눈이를 톡!'; }, 1600);
+});
+document.getElementById('btn-walk').addEventListener('click', e => {
+  walking = !walking;
+  e.currentTarget.classList.toggle('on', walking);
+  walker.classList.toggle('walking', walking);
+  if (!walking){ walker.style.left = ''; flip.style.transform = ''; }
+});
+// 걷는 방향에 따라 좌우 뒤집기
+let lastX = null;
+(function watch(){
+  if (walking){
+    const x = walker.getBoundingClientRect().left;
+    if (lastX !== null && Math.abs(x - lastX) > .3) flip.style.transform = x > lastX ? 'scaleX(-1)' : 'scaleX(1)';
+    lastX = x;
+  } else lastX = null;
+  requestAnimationFrame(watch);
+})();
+
+// 게임 크기 비교
+const MINIS = [['normal','none','기본'],['normal','bow','리본 손님'],['happy','witch','마녀'],['yum','chef','셰프'],['wow','mandarin','귤귤이']];
+const minis = document.getElementById('minis');
+minis.innerHTML = MINIS.map(([m, a, n], i) => `<button class="mini" data-i="${i}">${birdSVG(m, a)}<span>${n}</span></button>`).join('');
+minis.addEventListener('click', e => {
+  const b = e.target.closest('.mini'); if (!b) return;
+  const [m, a] = MINIS[+b.dataset.i];
+  const svg = b.querySelector('svg'); svg.dataset.mood = 'happy';
+  setTimeout(() => { svg.dataset.mood = m; }, 1300);
+});
+})();
+</script>
