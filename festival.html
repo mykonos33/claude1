@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<!--ARTIFACT-HEAD-START-->
+<title>오목눈이 축제 보드게임</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  /* layout: 고정 크기 무대(가로 1200×760 / 세로 760×1200)를 화면에 맞춰 확대·축소. 보드는 SVG(900×600) */
+  --bg:#FFF2F0;
+  --paper:#FFFFFF;
+  --pink:#F7A8C0;
+  --pink-deep:#E2719A;
+  --berry:#B9406B;
+  --ink:#4A3833;
+  --ink-soft:#8A7670;
+  --line:#F3D9E2;
+  --mint:#9FDCC6;
+  --sky:#D9EEFF;
+  --sky-deep:#6FA9DE;
+  --butter:#FFE08A;
+  --gold:#F5B83D;
+  --lilac:#E3D8FF;
+  --f-display:"Jua","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;overscroll-behavior:none}
+button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
+[hidden]{display:none!important}
+img{-webkit-user-drag:none}
+
+#wrap{position:fixed;inset:0;box-sizing:border-box;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:max(10px,env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-bottom,0px));
+  background:radial-gradient(circle at 24px 24px,rgba(226,113,154,.12) 5px,transparent 6px) 0 0/56px 56px,var(--bg)}
+#view{position:relative;width:100%;height:100%}
+#stage{position:absolute;left:50%;top:50%;width:1200px;height:760px;transform-origin:center center;border-radius:36px;overflow:hidden;
+  background:radial-gradient(circle at 30px 30px,rgba(247,168,192,.2) 6px,transparent 7px) 0 0/60px 60px,linear-gradient(#FFF0F4,#FFF8EE);
+  box-shadow:0 12px 40px rgba(185,64,107,.16)}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;box-sizing:border-box;padding:28px}
+
+.btn{font-family:var(--f-display);font-size:30px;color:#fff;background:var(--pink-deep);border:0;border-radius:999px;padding:14px 38px;cursor:pointer;
+  box-shadow:0 7px 0 var(--berry),0 12px 22px rgba(185,64,107,.22);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(5px);box-shadow:0 2px 0 var(--berry)}
+.btn.big{font-size:40px;padding:16px 60px}
+.btn.sub{background:var(--paper);color:var(--berry);box-shadow:0 7px 0 var(--line),0 12px 22px rgba(185,64,107,.12)}
+.btn.sub:active{box-shadow:0 2px 0 var(--line)}
+.btn:disabled{background:#E7D6DB;box-shadow:0 7px 0 #D3BEC5;cursor:default;transform:none}
+.corner{position:absolute;top:18px;right:18px;display:flex;gap:10px;z-index:40}
+.icon-btn{width:56px;height:56px;border-radius:50%;border:0;background:var(--paper);box-shadow:0 4px 0 var(--line);cursor:pointer;display:grid;place-items:center;padding:0;flex:none}
+.icon-btn svg{width:28px;height:28px}
+.icon-btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+
+/* ---------- 시작 화면 ---------- */
+.logo{text-align:center}
+.logo small{display:block;font-family:var(--f-display);font-size:28px;color:var(--pink-deep);letter-spacing:.06em}
+.logo h1{margin:2px 0 0;font-family:var(--f-display);font-weight:400;font-size:76px;line-height:1.05;color:var(--berry);text-wrap:balance;text-shadow:0 5px 0 #fff,0 9px 0 var(--line)}
+.float-birds{position:absolute;inset:0;pointer-events:none}
+.float-birds div{position:absolute;animation:bob 2.6s ease-in-out infinite;filter:drop-shadow(0 6px 8px rgba(185,64,107,.18))}
+.float-birds img{width:100%;display:block}
+.pick-row{display:flex;gap:26px;position:relative;z-index:2}
+.pick{width:280px;border:5px solid var(--line);background:var(--paper);border-radius:32px;padding:14px 16px 16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;box-shadow:0 8px 0 var(--line);transition:transform .12s}
+.pick .pk-girl{width:150px;height:170px;border-radius:50% 50% 24px 24px / 42% 42% 24px 24px;background:linear-gradient(#FFE3EC,#FFF4E6);overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+.pick[data-pick="somin"] .pk-girl{background:linear-gradient(#DCEEFF,#F4F9FF)}
+.pick .pk-girl img{width:96%;display:block}
+.pick b{font-family:var(--f-display);font-weight:400;font-size:34px}
+.pick span{font-size:17px;color:var(--ink-soft)}
+.pick.on{border-color:var(--pink-deep);transform:translateY(-6px);box-shadow:0 12px 0 var(--pink)}
+.pick .pk-tag{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--f-display);font-size:20px;color:#fff;background:var(--pink-deep);border-radius:999px;padding:4px 16px;white-space:nowrap}
+.pick .pk-tag.cpu{background:var(--ink-soft)}
+.diff-row{display:flex;align-items:center;gap:14px;position:relative;z-index:2}
+.lbl{font-family:var(--f-display);font-size:24px;color:var(--ink-soft)}
+.chips{display:flex;gap:10px}
+.chip{font-family:var(--f-display);font-size:24px;border:3px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 22px;cursor:pointer}
+.chip.on{background:var(--butter);border-color:var(--gold)}
+.nav-row{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;position:relative;z-index:2}
+.record{font-family:var(--f-display);font-size:21px;color:var(--ink-soft);position:relative;z-index:2}
+
+/* ---------- 게임 화면 ---------- */
+.screen.game-scr{display:grid;align-items:stretch;justify-content:stretch;gap:14px;padding:14px 18px 18px;
+  grid-template-areas:"hud hud" "board side";grid-template-columns:minmax(0,1fr) 280px;grid-template-rows:86px minmax(0,1fr)}
+.port .screen.game-scr{grid-template-areas:"hud" "board" "side";grid-template-columns:minmax(0,1fr);grid-template-rows:86px 520px minmax(0,1fr)}
+.hud{grid-area:hud;display:flex;align-items:center;gap:14px;background:var(--paper);border-radius:28px;padding:0 16px;box-shadow:0 5px 0 var(--line)}
+.hud-side{flex:1;display:flex;align-items:center;gap:12px;min-width:0;border-radius:24px;padding:6px 10px;transition:background .2s}
+.hud-side.them{flex-direction:row-reverse;text-align:right}
+.hud-side.turn{background:#FFF1F6}
+.hud-side.them.turn{background:#EEF6FF}
+.hud-av{width:62px;height:62px;border-radius:50%;overflow:hidden;flex:none;box-shadow:0 0 0 4px var(--pink)}
+.them .hud-av{box-shadow:0 0 0 4px var(--sky-deep)}
+.hud-av img{width:100%;height:100%;display:block;object-fit:cover;object-position:50% 0;transform:scale(1.45);transform-origin:50% 8%}
+.hud-info{display:flex;flex-direction:column;min-width:0}
+.hud-info b{font-family:var(--f-display);font-weight:400;font-size:20px;color:var(--ink-soft);white-space:nowrap}
+.hud-score{font-family:var(--f-display);font-size:36px;line-height:1;color:var(--berry);display:flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
+.them .hud-score{flex-direction:row-reverse;color:#3F7DB8}
+.hud-score svg{width:28px;height:26px}
+.hud-score small{font-size:18px;color:var(--ink-soft)}
+.hud-score.bump span{animation:pop .3s}
+.turn-badge{font-family:var(--f-display);font-size:26px;color:#fff;background:var(--pink-deep);border-radius:999px;padding:10px 22px;white-space:nowrap;flex:none}
+.turn-badge.cpu{background:var(--sky-deep)}
+.turn-badge.pop{animation:pop .35s}
+
+.board-wrap{grid-area:board;position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center}
+#board{width:100%;height:100%;display:block;overflow:visible}
+.tile-ring{transition:r .2s}
+.token{transition:transform .26s cubic-bezier(.3,1.5,.6,1)}
+.token.hop .tk-inner{animation:hopSvg .26s ease-out}
+.tk-inner{transform-box:fill-box;transform-origin:50% 100%}
+.tile.glow .tile-ring{animation:glow .9s ease-in-out infinite alternate}
+.route-pick{cursor:pointer}
+.route-pick .rp-bg{animation:glow .8s ease-in-out infinite alternate}
+
+.side{grid-area:side;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.port .side{display:grid;grid-template-columns:260px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:12px}
+.panel{background:var(--paper);border-radius:26px;box-shadow:0 5px 0 var(--line);padding:14px;box-sizing:border-box;min-width:0}
+.dice-panel{display:flex;flex-direction:column;align-items:center;gap:10px}
+.port .dice-panel{grid-row:span 2;justify-content:center}
+.die{width:88px;height:88px;border-radius:26px;background:#fff;box-shadow:inset 0 0 0 4px var(--line),0 7px 0 var(--line);display:grid;place-items:center}
+.die svg{width:72px;height:72px}
+.die.rolling{animation:shake .12s linear infinite}
+.die.land{animation:pop .35s}
+#btn-roll{font-size:28px;padding:12px 28px;width:100%}
+.msg{font-size:17px;line-height:1.35;text-align:center;min-height:46px;color:var(--ink)}
+.msg b{font-family:var(--f-display);font-weight:400;color:var(--berry)}
+.mine{display:flex;flex-direction:column;gap:8px}
+.panel h4{margin:0;font-family:var(--f-display);font-weight:400;font-size:21px;color:var(--ink-soft);display:flex;justify-content:space-between;align-items:baseline}
+.panel h4 small{font-family:var(--f-body);font-size:15px}
+.birds-row{display:flex;flex-wrap:wrap;gap:4px;min-height:46px;max-height:94px;overflow:auto}
+.birds-row .mb{width:44px;height:44px;border-radius:12px;background:#FFF6F9;display:grid;place-items:center;position:relative}
+.birds-row .mb.sp{background:#FFF3CF}
+.birds-row .mb img{max-width:40px;max-height:40px}
+.birds-row .mb i{position:absolute;right:-3px;bottom:-3px;font-style:normal;font-family:var(--f-display);font-size:14px;background:var(--pink-deep);color:#fff;border-radius:999px;padding:0 6px}
+.birds-row .empty{font-size:15px;color:var(--ink-soft);align-self:center}
+.sets{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow:auto}
+.set{display:flex;align-items:center;gap:6px;border-radius:14px;padding:3px 6px}
+.set.done{background:#FFF3CF}
+.set-name{font-family:var(--f-display);font-size:16px;width:84px;flex:none;line-height:1.1;white-space:nowrap}
+.set-name small{display:block;font-family:var(--f-body);font-size:13px;color:var(--berry)}
+.set-icons{display:flex;gap:3px;flex-wrap:wrap}
+.set-icons img{width:30px;height:28px;object-fit:contain}
+.set-icons img.miss{filter:grayscale(1) opacity(.45)}
+
+/* ---------- 오버레이 ---------- */
+.overlay{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(74,56,51,.32);padding:24px;box-sizing:border-box}
+.overlay.clear{background:transparent;pointer-events:none}
+.card{background:var(--paper);border-radius:34px;padding:26px 36px;max-width:640px;width:100%;box-sizing:border-box;text-align:center;box-shadow:0 10px 0 var(--line);display:flex;flex-direction:column;align-items:center;gap:14px;animation:pop .3s;pointer-events:auto}
+.card.cpu{box-shadow:0 0 0 6px #CFE4FA,0 10px 0 #CFE4FA}
+.card h3{margin:0;font-family:var(--f-display);font-weight:400;font-size:40px;color:var(--berry);text-wrap:balance}
+.card.cpu h3{color:#3F7DB8}
+.card p{margin:0;font-size:22px;line-height:1.45}
+.card .who{font-family:var(--f-display);font-size:20px;color:var(--ink-soft)}
+.card .art{display:flex;gap:14px;align-items:flex-end;justify-content:center;flex-wrap:wrap;min-height:120px}
+.card .art img{height:130px;animation:pop .4s backwards}
+.card .art .bn{display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--f-display);font-size:19px}
+.card .art .bn small{font-size:15px;color:var(--berry)}
+.card .tap{font-size:15px;color:var(--ink-soft)}
+.route-row{display:flex;gap:18px;width:100%}
+.route{flex:1;border:4px solid var(--line);border-radius:26px;background:#fff;padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:6px;align-items:center;box-shadow:0 6px 0 var(--line)}
+.route:active{transform:translateY(4px);box-shadow:0 2px 0 var(--line)}
+.route b{font-family:var(--f-display);font-weight:400;font-size:30px;color:var(--berry)}
+.route span{font-size:18px;color:var(--ink-soft);line-height:1.4}
+.route .rt-icons{display:flex;gap:4px;height:44px;align-items:center}
+.route .rt-icons svg{width:40px;height:40px}
+.howto{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;text-align:left;width:100%}
+.howto li{display:flex;gap:10px;align-items:center;font-size:19px;line-height:1.3}
+.howto li svg{width:46px;height:46px;flex:none}
+.tips{font-size:18px;color:var(--ink-soft);background:#FFF6DA;border-radius:16px;padding:10px 16px;line-height:1.5}
+.quiz-order{display:flex;align-items:flex-end;gap:16px;min-height:170px}
+.quiz-order .qbird{height:120px}
+.qbubble{background:#FFF6F9;border-radius:24px;padding:6px 16px;min-width:96px;min-height:150px;display:grid;place-items:center;position:relative}
+.qbubble svg{width:84px;height:140px}
+.qbubble .qmark{font-family:var(--f-display);font-size:80px;color:var(--pink)}
+.qtimer{width:100%;height:12px;border-radius:6px;background:#F7E8EE;overflow:hidden}
+.qtimer i{display:block;height:100%;background:var(--pink-deep);width:100%}
+.qbtns{display:flex;gap:12px}
+.qbtn{width:96px;height:100px;border-radius:24px;background:#fff;border:3px solid var(--line);box-shadow:0 5px 0 var(--line);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--f-display);font-size:17px;padding:0}
+.qbtn svg{width:58px;height:58px}
+.qbtn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--line)}
+.gacha-art{display:flex;align-items:flex-end;gap:20px;min-height:200px}
+.gacha-art svg.machine{width:150px;height:190px}
+.gacha-art svg.machine.shake{animation:shake .1s linear infinite}
+.caps{display:flex;gap:12px;align-items:flex-end}
+.cap{width:110px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--f-display);font-size:18px;animation:capIn .5s cubic-bezier(.3,1.5,.6,1) backwards}
+.cap img{height:100px;max-width:110px;object-fit:contain}
+.cap small{font-size:14px;color:var(--berry)}
+
+.fx{position:absolute;inset:0;pointer-events:none;z-index:60;overflow:hidden}
+.float{position:absolute;transform:translate(-50%,-50%);font-family:var(--f-display);font-size:34px;color:var(--berry);white-space:nowrap;
+  text-shadow:0 3px 0 #fff,0 -2px 0 #fff,2px 0 0 #fff,-2px 0 0 #fff;animation:floatUp 1.2s ease-out forwards}
+.float.cpu{color:#3F7DB8}
+.conf{position:absolute;top:-24px;width:12px;height:18px;border-radius:3px;animation:confetti linear forwards}
+
+/* ---------- 결과 ---------- */
+.res-h{margin:0;font-family:var(--f-display);font-weight:400;font-size:58px;color:var(--berry);text-align:center;text-wrap:balance;text-shadow:0 5px 0 #fff}
+.res-row{display:flex;gap:32px;align-items:flex-end}
+.res-card{width:320px;background:var(--paper);border-radius:34px;padding:16px 18px 18px;box-shadow:0 8px 0 var(--line);display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;box-sizing:border-box}
+.res-card.win{box-shadow:0 0 0 6px var(--gold),0 10px 0 #D89A23;transform:translateY(-10px)}
+.res-card .crown{position:absolute;top:-46px;width:90px;animation:bob 1.6s ease-in-out infinite}
+.rc-girl{width:150px;height:170px;border-radius:50% 50% 24px 24px / 40% 40% 24px 24px;background:linear-gradient(#FFE3EC,#FFF4E6);overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+.rc-girl img{width:96%;display:block}
+.res-card b{font-family:var(--f-display);font-weight:400;font-size:30px}
+.rc-score{font-family:var(--f-display);font-size:52px;color:var(--berry);display:flex;align-items:center;gap:8px;line-height:1.1;font-variant-numeric:tabular-nums}
+.rc-score svg{width:38px;height:35px}
+.rc-break{font-size:16px;color:var(--ink-soft);line-height:1.5;text-align:center}
+.girl-img{transform-origin:50% 100%}
+.girl-img.cheer{animation:hop .9s ease-in-out infinite}
+.girl-img.sad{filter:saturate(.5) brightness(.97);transform:rotate(-4deg)}
+
+@keyframes bob{50%{transform:translateY(-10px)}}
+@keyframes hop{50%{transform:translateY(-14px) scale(1.04)}}
+@keyframes hopSvg{0%{transform:translateY(0)}50%{transform:translateY(-18px)}100%{transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes shake{0%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}100%{transform:rotate(-6deg)}}
+@keyframes glow{from{opacity:.35}to{opacity:1}}
+@keyframes capIn{from{transform:translateY(-60px) scale(.3);opacity:0}to{transform:none;opacity:1}}
+@keyframes floatUp{0%{transform:translate(-50%,-50%) scale(.5);opacity:0}20%{transform:translate(-50%,-80%) scale(1.15);opacity:1}100%{transform:translate(-50%,-190%) scale(1);opacity:0}}
+@keyframes confetti{to{transform:translateY(1320px) rotate(760deg)}}
+@media (prefers-reduced-motion:reduce){
+  .float-birds div,.res-card .crown,.girl-img.cheer{animation:none}
+}
+</style>
+<!--ARTIFACT-HEAD-END-->
+</head>
+<body>
+<!--ARTIFACT-BODY-START-->
+<div id="wrap"><div id="view"><div id="stage">
+
+  <div class="corner" id="corner">
+    <button class="icon-btn" id="btn-sound" aria-label="소리 켜고 끄기"></button>
+  </div>
+
+  <!-- 시작 -->
+  <section id="scr-title" class="screen">
+    <div class="float-birds" id="title-birds" aria-hidden="true"></div>
+    <div class="logo"><small>유민 · 소민의</small><h1>오목눈이 축제 보드게임</h1></div>
+    <div class="pick-row" id="pick-row"></div>
+    <div class="diff-row">
+      <span class="lbl">컴퓨터 퀴즈 실력</span>
+      <div class="chips" id="diff-chips">
+        <button class="chip" data-diff="easy">살살</button>
+        <button class="chip on" data-diff="normal">보통</button>
+        <button class="chip" data-diff="hard">진심</button>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn big" id="btn-start" disabled>축제 시작!</button></div>
+    <div class="record" id="record"></div>
+  </section>
+
+  <!-- 게임 -->
+  <section id="scr-game" class="screen game-scr" hidden>
+    <header class="hud">
+      <button class="icon-btn" id="btn-pause" aria-label="메뉴"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5" fill="#B9406B"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="#B9406B"/></svg></button>
+      <div class="hud-side me" id="hud-me">
+        <div class="hud-av" id="hud-p-av"></div>
+        <div class="hud-info"><b id="hud-p-name"></b><div class="hud-score" id="hud-p-score"></div></div>
+      </div>
+      <div class="turn-badge" id="turn-badge"></div>
+      <div class="hud-side them" id="hud-them">
+        <div class="hud-av" id="hud-c-av"></div>
+        <div class="hud-info"><b id="hud-c-name"></b><div class="hud-score" id="hud-c-score"></div></div>
+      </div>
+    </header>
+    <div class="board-wrap"><svg id="board" viewBox="0 0 900 600" aria-label="축제 보드판"></svg></div>
+    <aside class="side">
+      <div class="panel dice-panel">
+        <div class="die" id="die"></div>
+        <button class="btn" id="btn-roll" disabled>주사위 굴리기</button>
+        <div class="msg" id="msg"></div>
+      </div>
+      <div class="panel mine">
+        <h4>내 손님 <small id="mine-count">0명</small></h4>
+        <div class="birds-row" id="mine-birds"></div>
+      </div>
+      <div class="panel sets" id="sets-panel"></div>
+    </aside>
+  </section>
+
+  <!-- 결과 -->
+  <section id="scr-result" class="screen" hidden></section>
+
+  <div class="overlay" id="overlay" hidden></div>
+  <div class="fx" id="fx"></div>
+</div></div></div>
+
+<script>
+(() => {
+'use strict';
+
+/* =========================================================
+   설정값
+   ========================================================= */
+const FINISH_BONUS = [3, 1];      // 1등 도착, 2등 도착 보너스
+const GACHA_COUNT = [[1, .5], [2, .35], [3, .15]];  // 가챠 개수 확률
+const GACHA_SPECIAL = .2;         // 가챠에서 리본 손님이 나올 확률
+const QUIZ_SHOW = 2.2;            // 퀴즈 주문 보여주는 시간(초)
+const CPU_QUIZ = { easy:.5, normal:.65, hard:.82 };
+const DIFF_LABEL = { easy:'살살', normal:'보통', hard:'진심' };
+
+const CH = {
+  yumin:{ name:'유민', color:'#E2719A', lines:{ win:'언니가 축제 1등이다!', lose:'다음 축제에선 꼭 이길 거야!' } },
+  somin:{ name:'소민', color:'#6FA9DE', lines:{ win:'소민이가 1등! 헤헤', lose:'으앙~ 한 번 더 해!' } },
+};
+const BIRDS = {
+  nest_l:{ name:'솜이' }, grey:{ name:'회색이' }, headphone:{ name:'헤드폰이' }, hood:{ name:'노랑모자' },
+  mandarin:{ name:'귤귤이' }, white:{ name:'하양이' }, fest_b:{ name:'꼬마' }, fest_c:{ name:'새싹이' },
+  bow_pink:{ name:'분홍리본', sp:1 }, bow_blue:{ name:'하늘리본', sp:1 }, bow_yellow:{ name:'노랑리본', sp:1 }, bow_purple:{ name:'보라리본', sp:1 }, nest_r:{ name:'하트핀', sp:1 },
+};
+const NORMAL = Object.keys(BIRDS).filter(k => !BIRDS[k].sp);
+const SPECIAL = Object.keys(BIRDS).filter(k => BIRDS[k].sp);
+const SETS = [
+  { name:'리본 세트', bonus:4, ids:['bow_pink','bow_blue','bow_yellow','bow_purple'] },
+  { name:'둥지 세트', bonus:2, ids:['nest_l','nest_r'] },
+  { name:'귤 축제 세트', bonus:2, ids:['mandarin','hood','headphone'] },
+  { name:'솜뭉치 세트', bonus:2, ids:['grey','white','fest_b','fest_c'] },
+];
+const FLAVORS = {
+  straw:{ name:'딸기', base:'#F9B3C6', dark:'#E07A98', bits:'#D9365B' },
+  oreo:{ name:'오레오', base:'#F1ECE6', dark:'#C9BEB2', bits:'#3A2E2A' },
+  milk:{ name:'우유', base:'#FFF8E6', dark:'#E3D6B8', bits:null },
+  choco:{ name:'초코', base:'#9A6448', dark:'#6F4430', bits:'#5A3424' },
+};
+const FKEYS = Object.keys(FLAVORS);
+
+/* =========================================================
+   도우미
+   ========================================================= */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const STAGE = $('#stage'), FX = $('#fx'), OV = $('#overlay');
+const SVGNS = 'http://www.w3.org/2000/svg';
+let scale = 1;
+
+function fit(){
+  const v = $('#view'); const w = v.clientWidth, h = v.clientHeight;
+  const land = w >= h * 0.95;
+  const W = land ? 1200 : 760, H = land ? 760 : 1200;
+  STAGE.style.width = W + 'px'; STAGE.style.height = H + 'px';
+  STAGE.classList.toggle('port', !land);
+  scale = Math.min(w / W, h / H);
+  STAGE.style.transform = `translate(-50%,-50%) scale(${scale})`;
+}
+addEventListener('resize', fit);
+addEventListener('orientationchange', () => setTimeout(fit, 200));
+
+/* 소리 */
+let actx = null, muted = false;
+try { muted = localStorage.getItem('omok-muted') === '1'; } catch(e) {}
+function tone(f, dur=.12, type='sine', vol=.14, when=0, slide=0){
+  if (muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, f + slide), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + .03);
+  } catch(e) {}
+}
+const sfx = {
+  tap(){ tone(700,.06,'triangle',.12) },
+  step(){ tone(620 + Math.random()*120,.07,'triangle',.1) },
+  dice(){ tone(300 + Math.random()*300,.04,'square',.04) },
+  good(){ [523,659,784].forEach((f,i)=>tone(f,.15,'triangle',.14,i*.07)) },
+  great(){ [523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.15,i*.07)) },
+  bad(){ tone(260,.25,'triangle',.1,0,-100) },
+  pop(){ tone(880,.07,'sine',.1,0,300) },
+  gacha(){ for(let i=0;i<8;i++) tone(400+i*60,.05,'square',.04,i*.06) },
+  win(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,.22,'triangle',.14,i*.1)) },
+  tick(){ tone(990,.05,'sine',.07) },
+};
+const ICON_SOUND_ON = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#B9406B"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="#B9406B" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>';
+const ICON_SOUND_OFF = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#B9A0A8"/><path d="M16 9l5 6M21 9l-5 6" stroke="#B9A0A8" stroke-width="2.2" stroke-linecap="round"/></svg>';
+function renderSoundBtn(){ $('#btn-sound').innerHTML = muted ? ICON_SOUND_OFF : ICON_SOUND_ON; }
+function toggleSound(){ muted = !muted; try { localStorage.setItem('omok-muted', muted ? '1' : '0'); } catch(e) {} renderSoundBtn(); $$('.snd-label').forEach(e => e.textContent = muted ? '소리 켜기' : '소리 끄기'); if (!muted) sfx.tap(); }
+
+/* 그림 */
+const birdSrc = id => `assets/birds/${id}.webp`;
+const girlImg = (who, mood='') => `<img class="girl-img ${mood}" src="assets/girls/${who}.webp" alt="${CH[who].name}" draggable="false">`;
+const HEART = '<svg viewBox="0 0 24 22" aria-hidden="true"><path d="M12 21C5 15.5 1 12 1 7a5.5 5.5 0 0 1 11-2.5A5.5 5.5 0 0 1 23 7c0 5-4 8.5-11 14z" fill="#F0628F"/><ellipse cx="7" cy="7" rx="2.4" ry="1.6" fill="#fff" opacity=".6"/></svg>';
+const CROWN = '<svg class="crown" viewBox="0 0 60 40" aria-hidden="true"><path d="M4 36L8 10l12 14L30 4l10 20 12-14 4 26z" fill="#F5B83D" stroke="#C98A1A" stroke-width="2" stroke-linejoin="round"/><circle cx="30" cy="24" r="4" fill="#F0628F"/></svg>';
+function scoopG(f, cx, cy, r = 25){
+  const F = FLAVORS[f];
+  let bits = '';
+  if (F.bits) bits = [[-11,-7],[8,-13],[13,3],[-3,7],[-15,6],[3,-3],[10,12]].map(([x,y]) => f === 'straw'
+    ? `<rect x="${cx+x-2.5}" y="${cy+y-2}" width="5" height="4" rx="1.4" fill="${F.bits}"/>` : `<circle cx="${cx+x}" cy="${cy+y}" r="2.3" fill="${F.bits}"/>`).join('');
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${F.base}" stroke="${F.dark}" stroke-width="2"/>${bits}<ellipse cx="${cx-9}" cy="${cy-11}" rx="6.5" ry="4" fill="#fff" opacity=".55"/>`;
+}
+const CUP = `<path d="M22 112h56l-8 44H30z" fill="#FBC6D6" stroke="#E68AA8" stroke-width="2" stroke-linejoin="round"/><rect x="17" y="105" width="66" height="11" rx="5" fill="#FFDCE6" stroke="#E68AA8" stroke-width="2"/><circle cx="50" cy="134" r="10" fill="#fff"/><circle cx="46.5" cy="133" r="1.6" fill="#4A3833"/><circle cx="53.5" cy="133" r="1.6" fill="#4A3833"/>`;
+const iceSVG = scoops => `<svg viewBox="0 -14 100 174" aria-hidden="true">${CUP}${scoops.map((f,i) => scoopG(f, 50, 94 - i * 30)).join('')}</svg>`;
+const iconScoop = f => `<svg viewBox="21 66 58 58" aria-hidden="true">${scoopG(f,50,96)}</svg>`;
+
+/* 칸 아이콘 (보드·설명 공용, 중심 0,0 기준) */
+const TILE = {
+  start:{ fill:'#C9EBD9', stroke:'#7CC4A4', label:'출발' },
+  finish:{ fill:'#FFE08A', stroke:'#E7B53C', label:'도착' },
+  cust:{ fill:'#FFFFFF', stroke:'#F3B6C9', label:'손님' },
+  star:{ fill:'#FFF0B8', stroke:'#F5B83D', label:'리본 손님' },
+  gacha:{ fill:'#FBD3E6', stroke:'#E2719A', label:'가챠' },
+  ice:{ fill:'#D9EEFF', stroke:'#7FB6E8', label:'퀴즈' },
+  event:{ fill:'#E8DEFF', stroke:'#A88BE8', label:'이벤트' },
+  fork:{ fill:'#C9EBD9', stroke:'#7CC4A4', label:'갈림길' },
+};
+function tileIcon(type){
+  switch(type){
+    case 'cust': return `<image href="${birdSrc('white')}" x="-21" y="-21" width="42" height="42"/>`;
+    case 'star': return `<g transform="scale(1.1)"><path d="M0 0L-15-10v20z" fill="#F48FB1"/><path d="M0 0L15-10v20z" fill="#F48FB1"/><circle r="5" fill="#F48FB1" stroke="#fff" stroke-width="2"/></g>`;
+    case 'gacha': return `<rect x="-13" y="2" width="26" height="15" rx="4" fill="#E2719A"/><circle cy="-6" r="13" fill="#fff" stroke="#E2719A" stroke-width="3"/><circle cx="-5" cy="-8" r="3.5" fill="#FFD54F"/><circle cx="4" cy="-4" r="3.5" fill="#8EC5F5"/><circle cx="2" cy="-12" r="3" fill="#9FDCC6"/><circle cy="10" r="2.6" fill="#fff"/>`;
+    case 'ice': return `<path d="M-10 0h20l-10 20z" fill="#F2C27B" stroke="#C98C3E" stroke-width="1.6"/><circle cy="-6" r="11" fill="#F9B3C6" stroke="#E07A98" stroke-width="1.6"/><text y="-2" text-anchor="middle" font-family="Jua,sans-serif" font-size="13" fill="#B9406B">?</text>`;
+    case 'event': return `<rect x="-13" y="-17" width="26" height="34" rx="5" fill="#fff" stroke="#A88BE8" stroke-width="2.4" transform="rotate(-8)"/><text y="9" text-anchor="middle" font-family="Jua,sans-serif" font-size="26" fill="#8A6AD8">!</text>`;
+    case 'fork': return `<rect x="-2.5" y="-6" width="5" height="24" fill="#B98A5A"/><path d="M-2-16h17l6 6-6 6H-2z" fill="#fff" stroke="#7CC4A4" stroke-width="2"/><path d="M2-6h-17l-6 6 6 6H2z" fill="#fff" stroke="#7CC4A4" stroke-width="2"/>`;
+    case 'start': return `<text y="8" text-anchor="middle" font-family="Jua,sans-serif" font-size="21" fill="#3D8A68">출발</text>`;
+    case 'finish': return `<path d="M-4 16v-32" stroke="#8A6A4A" stroke-width="3"/><path d="M-4-16h20l-5 7 5 7H-4z" fill="#E2719A"/><text y="28" text-anchor="middle" font-family="Jua,sans-serif" font-size="15" fill="#B9406B">도착</text>`;
+  }
+  return '';
+}
+const tileSVG = type => `<svg viewBox="-34 -34 68 68" aria-hidden="true"><circle r="30" fill="${TILE[type].fill}" stroke="${TILE[type].stroke}" stroke-width="4"/>${tileIcon(type)}</svg>`;
+function dieFace(n){
+  const P = { 1:[[50,50]], 2:[[28,28],[72,72]], 3:[[26,26],[50,50],[74,74]], 4:[[28,28],[72,28],[28,72],[72,72]], 5:[[26,26],[74,26],[50,50],[26,74],[74,74]], 6:[[28,24],[72,24],[28,50],[72,50],[28,76],[72,76]] };
+  return `<svg viewBox="0 0 100 100" aria-label="주사위 ${n}">${P[n].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="10" fill="${n === 1 ? '#E2719A' : '#4A3833'}"/>`).join('')}</svg>`;
+}
+const machineSVG = `<svg class="machine" viewBox="0 0 150 190" aria-hidden="true">
+  <rect x="25" y="110" width="100" height="70" rx="14" fill="#F7A8C0" stroke="#E2719A" stroke-width="4"/>
+  <circle cx="75" cy="66" r="56" fill="#F5FBFF" stroke="#E2719A" stroke-width="4"/>
+  <circle cx="55" cy="60" r="11" fill="#FFD54F"/><circle cx="85" cy="48" r="11" fill="#8EC5F5"/><circle cx="92" cy="80" r="11" fill="#9FDCC6"/><circle cx="62" cy="88" r="11" fill="#B79CF2"/><circle cx="74" cy="68" r="11" fill="#F48FB1"/>
+  <ellipse cx="55" cy="36" rx="16" ry="8" fill="#fff" opacity=".8"/>
+  <circle cx="75" cy="140" r="14" fill="#fff" stroke="#E2719A" stroke-width="3"/><rect x="69" y="133" width="12" height="14" rx="3" fill="#E2719A"/>
+  <rect x="58" y="160" width="34" height="14" rx="5" fill="#B9406B"/>
+</svg>`;
+
+/* =========================================================
+   보드판 만들기
+   ========================================================= */
+const NODES = [];
+function add(x, y, type){ NODES.push({ id:NODES.length, x, y, type, next:[] }); return NODES.length - 1; }
+function chain(from, pts, types){ let p = from; const ids = []; pts.forEach(([x,y], i) => { const id = add(x, y, types[i]); NODES[p].next.push(id); ids.push(id); p = id; }); return ids; }
+const START = add(70, 530, 'start');
+const lower = chain(START, [[70,455],[70,380]], ['cust','ice']);
+const FORK = add(70, 300, 'fork'); NODES[lower[1]].next.push(FORK);
+const shortIds = chain(FORK, [[165,300],[260,300],[355,300],[450,300],[545,300],[640,300],[735,300]], ['cust','ice','cust','event','cust','ice','cust']);
+const longPts = [[70,215],[70,140],[70,70],[155,70],[240,70],[325,70],[410,70],[495,70],[580,70],[665,70],[750,70],[830,70],[830,140],[830,215]];
+const longIds = chain(FORK, longPts, ['gacha','cust','star','event','gacha','cust','ice','star','gacha','event','cust','star','gacha','cust']);
+const JOIN = add(830, 300, 'cust');
+NODES[shortIds[shortIds.length - 1]].next.push(JOIN); NODES[longIds[longIds.length - 1]].next.push(JOIN);
+const tail = chain(JOIN, [[830,385],[830,460],[830,530],[745,530],[660,530],[575,530],[490,530],[405,530],[320,530],[235,530]], ['event','cust','gacha','ice','cust','event','star','cust','gacha','ice']);
+const FINISH = add(150, 530, 'finish'); NODES[tail[tail.length - 1]].next.push(FINISH);
+const ROUTES = { short:shortIds[0], long:longIds[0] };
+
+function drawBoard(){
+  const b = $('#board');
+  let roads = '';
+  NODES.forEach(n => n.next.forEach(m => { const t = NODES[m]; roads += `<line x1="${n.x}" y1="${n.y}" x2="${t.x}" y2="${t.y}"/>`; }));
+  const deco = `
+    <rect x="110" y="104" width="680" height="160" rx="30" fill="#FFF7FB" opacity=".9"/>
+    <g>${Array.from({length:15}, (_, i) => `<path d="M${130 + i*44} 118l22 26 22-26z" fill="${['#F7A8C0','#FFE08A','#9FDCC6','#BFE0FF','#D9C8FF'][i % 5]}"/>`).join('')}</g>
+    <path d="M130 118h660" stroke="#E2B7C6" stroke-width="2"/>
+    <text x="450" y="200" text-anchor="middle" font-family="Jua,sans-serif" font-size="46" fill="#B9406B">오목눈이 아이스크림 축제</text>
+    <text x="450" y="238" text-anchor="middle" font-family="Gowun Dodum,sans-serif" font-size="19" fill="#8A7670">손님을 가장 많이 모은 사장님이 1등!</text>
+    ${[[150,170,'#F7A8C0'],[750,160,'#9FDCC6'],[790,200,'#FFE08A']].map(([x,y,c]) => `<path d="M${x} ${y+26}q-4 30 6 50" stroke="#C7AFA5" stroke-width="2" fill="none"/><ellipse cx="${x}" cy="${y}" rx="20" ry="25" fill="${c}"/><ellipse cx="${x-7}" cy="${y-8}" rx="5" ry="8" fill="#fff" opacity=".5"/>`).join('')}
+    <rect x="110" y="340" width="680" height="152" rx="30" fill="#FFF7FB" opacity=".9"/>
+    <image href="${birdSrc('chef')}" x="130" y="342" width="140" height="150"/>
+    <g transform="translate(290 370)"><rect width="230" height="62" rx="22" fill="#fff" stroke="#F3D9E2" stroke-width="3"/><path d="M0 34l-14 8 14-20z" fill="#fff"/><text x="115" y="28" text-anchor="middle" font-family="Jua,sans-serif" font-size="21" fill="#4A3833">축제에 어서 와요!</text><text x="115" y="50" text-anchor="middle" font-family="Gowun Dodum,sans-serif" font-size="15" fill="#8A7670">점장 오목눈이</text></g>
+    <g transform="translate(560 352) scale(.68)">${machineSVG.replace('<svg class="machine" viewBox="0 0 150 190" aria-hidden="true">','').replace('</svg>','')}</g>
+    <text x="616" y="490" text-anchor="middle" font-family="Jua,sans-serif" font-size="17" fill="#B9406B">키캡 축 가챠</text>
+    <image href="${birdSrc('mandarin')}" x="680" y="392" width="96" height="86"/>`;
+  b.innerHTML = `<defs>${['yumin','somin'].map(w => `<clipPath id="tkclip-${w}"><circle r="24"/></clipPath>`).join('')}</defs>
+    <rect x="8" y="8" width="884" height="584" rx="40" fill="#EAF6E6"/>
+    <rect x="8" y="8" width="884" height="584" rx="40" fill="url(#none)" stroke="#D3EBCB" stroke-width="4"/>
+    ${deco}
+    <g stroke="#F6E2D2" stroke-width="30" stroke-linecap="round">${roads}</g>
+    <g stroke="#fff" stroke-width="3" stroke-dasharray="6 10" stroke-linecap="round">${roads}</g>
+    <g id="tiles">${NODES.map(n => {
+      const big = n.type === 'start' || n.type === 'finish';
+      const r = big ? 36 : 30;
+      return `<g class="tile" data-id="${n.id}" transform="translate(${n.x} ${n.y})">
+        <circle class="tile-ring" r="${r + 7}" fill="none" stroke="#F5B83D" stroke-width="5" opacity="0"/>
+        <circle r="${r}" fill="${TILE[n.type].fill}" stroke="${TILE[n.type].stroke}" stroke-width="4"/>
+        ${tileIcon(n.type)}</g>`;
+    }).join('')}</g>
+    <g id="route-hints"></g>
+    <g id="tokens">${['somin','yumin'].map(w => `<g class="token" id="tk-${w}"><g class="tk-inner">
+      <circle r="28" fill="${CH[w].color}"/><circle r="25" fill="#fff"/>
+      <image href="assets/girls/${w}.webp" x="-34" y="-26" width="68" height="96" clip-path="url(#tkclip-${w})" preserveAspectRatio="xMidYMin slice"/>
+      <path d="M-8 26l8 12 8-12z" fill="${CH[w].color}"/></g></g>`).join('')}</g>`;
+}
+
+/* =========================================================
+   게임 상태
+   ========================================================= */
+const S = { player:null, cpu:null, diff:'normal' };
+let G = null;
+let paused = false;
+
+function newPlayer(who, cpu){ return { who, cpu, pos:START, hist:[], birds:[], finishRank:0, extra:false }; }
+const P = () => G.players[0], C = () => G.players[1];
+function birdValue(id){ return BIRDS[id].sp ? 2 : 1; }
+function setsDone(pl){ return SETS.filter(s => s.ids.every(id => pl.birds.includes(id))); }
+function score(pl){
+  const b = pl.birds.reduce((s, id) => s + birdValue(id), 0);
+  const sets = setsDone(pl).reduce((s, x) => s + x.bonus, 0);
+  const fin = pl.finishRank ? FINISH_BONUS[pl.finishRank - 1] : 0;
+  return { total:b + sets + fin, birds:b, sets, fin };
+}
+
+/* =========================================================
+   화면 갱신
+   ========================================================= */
+function show(name){ ['title','game','result'].forEach(n => $('#scr-' + n).hidden = n !== name); $('#corner').hidden = name === 'game'; }
+let lastTotals = [0, 0];
+function renderHud(){
+  [P(), C()].forEach((pl, i) => {
+    const el = $(i === 0 ? '#hud-p-score' : '#hud-c-score');
+    const t = score(pl).total;
+    el.innerHTML = `${HEART}<span>${t}</span><small>${i === 0 ? `· 손님 ${pl.birds.length}` : `손님 ${pl.birds.length} ·`}</small>`;
+    if (t !== lastTotals[i]){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    lastTotals[i] = t;
+  });
+  const cur = G.players[G.turn];
+  $('#hud-me').classList.toggle('turn', G.turn === 0);
+  $('#hud-them').classList.toggle('turn', G.turn === 1);
+  const tb = $('#turn-badge');
+  const txt = `${CH[cur.who].name}이 차례!`;
+  if (tb.textContent !== txt){ tb.textContent = txt; tb.className = 'turn-badge pop' + (cur.cpu ? ' cpu' : ''); }
+  renderMine();
+}
+function renderMine(){
+  const pl = P();
+  $('#mine-count').textContent = `${pl.birds.length}명`;
+  const counts = {}; pl.birds.forEach(id => counts[id] = (counts[id] || 0) + 1);
+  const ids = Object.keys(counts);
+  $('#mine-birds').innerHTML = ids.length
+    ? ids.map(id => `<div class="mb ${BIRDS[id].sp ? 'sp' : ''}" title="${BIRDS[id].name}"><img src="${birdSrc(id)}" alt="${BIRDS[id].name}">${counts[id] > 1 ? `<i>${counts[id]}</i>` : ''}</div>`).join('')
+    : '<span class="empty">아직 손님이 없어요. 주사위를 굴려요!</span>';
+  $('#sets-panel').innerHTML = `<h4>세트 모으기 <small>완성하면 보너스</small></h4>` + SETS.map(s => {
+    const done = s.ids.every(id => pl.birds.includes(id));
+    return `<div class="set ${done ? 'done' : ''}"><span class="set-name">${s.name}<small>+${s.bonus}${done ? ' 완성!' : ''}</small></span>
+      <span class="set-icons">${s.ids.map(id => `<img src="${birdSrc(id)}" alt="${BIRDS[id].name}" class="${pl.birds.includes(id) ? '' : 'miss'}">`).join('')}</span></div>`;
+  }).join('');
+}
+function msg(html){ $('#msg').innerHTML = html; }
+function placeTokens(animWho){
+  G.players.forEach(pl => {
+    const n = NODES[pl.pos];
+    const same = G.players.every(q => q.pos === pl.pos);
+    const dx = same ? (pl === P() ? -16 : 16) : 0;
+    const el = $('#tk-' + pl.who);
+    el.style.transform = `translate(${n.x + dx}px, ${n.y - 22}px)`;
+    if (animWho === pl.who){ el.classList.remove('hop'); void el.getBoundingClientRect(); el.classList.add('hop'); }
+  });
+  // 차례인 사람 말을 맨 위로
+  const cur = G.players[G.turn]; const tk = $('#tk-' + cur.who); tk.parentNode.appendChild(tk);
+}
+function boardPos(x, y){
+  const svg = $('#board'); const r = svg.getBoundingClientRect(), s = STAGE.getBoundingClientRect();
+  const k = Math.min(r.width / 900, r.height / 600);
+  const ox = r.left + (r.width - 900 * k) / 2, oy = r.top + (r.height - 600 * k) / 2;
+  return { x:(ox + x * k - s.left) / scale, y:(oy + y * k - s.top) / scale };
+}
+function floatAtNode(pl, text){
+  const n = NODES[pl.pos]; const p = boardPos(n.x, n.y - 50);
+  const f = document.createElement('div'); f.className = 'float' + (pl.cpu ? ' cpu' : ''); f.textContent = text;
+  f.style.left = p.x + 'px'; f.style.top = p.y + 'px'; FX.appendChild(f); setTimeout(() => f.remove(), 1250);
+}
+function confetti(){
+  const cols = ['#F7A8C0','#FFE08A','#9FDCC6','#BFE0FF','#E2719A','#F5B83D','#B79CF2'];
+  for (let i = 0; i < 80; i++){
+    const c = document.createElement('i'); c.className = 'conf';
+    c.style.left = rnd(0,100) + '%'; c.style.background = pick(cols);
+    c.style.animationDelay = rnd(0,.9) + 's'; c.style.animationDuration = rnd(2.2,3.8) + 's';
+    FX.appendChild(c); setTimeout(() => c.remove(), 5000);
+  }
+}
+
+/* 카드(효과 알림). 내 차례면 톡 해서 닫고, 컴퓨터 차례면 저절로 닫혀요 */
+function showCard(pl, { title, text = '', art = '', tone = 'good' }){
+  return new Promise(res => {
+    OV.className = 'overlay';
+    OV.innerHTML = `<div class="card ${pl.cpu ? 'cpu' : ''}">
+      <span class="who">${CH[pl.who].name}${pl.cpu ? ' (컴퓨터)' : ''}</span>
+      <h3>${title}</h3>${art ? `<div class="art">${art}</div>` : ''}${text ? `<p>${text}</p>` : ''}
+      <span class="tap">${pl.cpu ? '' : '톡 하면 계속해요'}</span></div>`;
+    OV.hidden = false;
+    tone === 'good' ? sfx.good() : tone === 'great' ? sfx.great() : tone === 'bad' ? sfx.bad() : sfx.pop();
+    let done = false;
+    const close = () => { if (done) return; done = true; OV.hidden = true; OV.innerHTML = ''; OV.onclick = null; res(); };
+    setTimeout(() => { OV.onclick = close; }, 350);
+    setTimeout(close, pl.cpu ? 1700 : 3200);
+  });
+}
+const birdArt = ids => ids.map((id, i) => `<div class="bn" style="animation-delay:${i * .15}s"><img src="${birdSrc(id)}" alt="" style="animation-delay:${i * .15}s">${BIRDS[id].name}${BIRDS[id].sp ? '<small>리본 손님 ×2</small>' : ''}</div>`).join('');
+
+/* =========================================================
+   손님 얻기 / 잃기
+   ========================================================= */
+function giveBirds(pl, ids){
+  const before = setsDone(pl).map(s => s.name);
+  pl.birds.push(...ids);
+  const gained = ids.reduce((s, id) => s + birdValue(id), 0);
+  floatAtNode(pl, `+${gained}`);
+  renderHud();
+  return setsDone(pl).filter(s => !before.includes(s.name));
+}
+async function announceSets(pl, newSets){
+  for (const s of newSets){
+    if (!pl.cpu) confetti();
+    await showCard(pl, { title:`${s.name} 완성!`, art: birdArt(s.ids).replace(/<small>[^<]*<\/small>/g, ''), text:`보너스 +${s.bonus}점!`, tone:'great' });
+  }
+}
+function randomBird(special){ return pick(special ? SPECIAL : NORMAL); }
+
+/* =========================================================
+   칸 효과
+   ========================================================= */
+async function tileEffect(pl, chained = false){
+  const t = NODES[pl.pos].type;
+  if (t === 'cust'){
+    const id = randomBird(false);
+    const ns = giveBirds(pl, [id]);
+    await showCard(pl, { title:'손님이 왔어요!', art:birdArt([id]), text:`${BIRDS[id].name}가 ${CH[pl.who].name}이네 가게 손님이 됐어요.` });
+    await announceSets(pl, ns);
+  }
+  else if (t === 'star'){
+    const id = randomBird(true);
+    const ns = giveBirds(pl, [id]);
+    await showCard(pl, { title:'리본 손님 등장!', art:birdArt([id]), text:'리본 손님은 2점이에요!', tone:'great' });
+    await announceSets(pl, ns);
+  }
+  else if (t === 'gacha') await gacha(pl);
+  else if (t === 'ice' && !chained) await quiz(pl);
+  else if (t === 'event' && !chained) await eventCard(pl);
+  else if (t === 'fork' && !chained) await showCard(pl, { title:'갈림길!', text:'다음 차례에 갈 길을 골라요.', tone:'pop' });
+}
+
+async function gacha(pl){
+  let r = Math.random(), n = 1;
+  for (const [k, p] of GACHA_COUNT){ if (r < p){ n = k; break; } r -= p; }
+  const ids = Array.from({ length:n }, () => randomBird(Math.random() < GACHA_SPECIAL));
+  OV.className = 'overlay';
+  OV.innerHTML = `<div class="card ${pl.cpu ? 'cpu' : ''}"><span class="who">${CH[pl.who].name}${pl.cpu ? ' (컴퓨터)' : ''}</span><h3>키캡 축 가챠!</h3>
+    <div class="gacha-art">${machineSVG}<div class="caps" id="caps"></div></div><p id="gacha-txt">최소 1개 보장! 운이 좋으면 3개까지?!</p><span class="tap"></span></div>`;
+  OV.hidden = false;
+  const m = $('.machine', OV); m.classList.add('shake'); sfx.gacha();
+  await wait(900); m.classList.remove('shake');
+  for (let i = 0; i < ids.length; i++){
+    const id = ids[i];
+    $('#caps').insertAdjacentHTML('beforeend', `<div class="cap"><img src="${birdSrc(id)}" alt="">${BIRDS[id].name}${BIRDS[id].sp ? '<small>리본 ×2</small>' : ''}</div>`);
+    BIRDS[id].sp ? sfx.great() : sfx.pop();
+    await wait(450);
+  }
+  $('#gacha-txt').textContent = n === 3 ? '대박! 3명이나 왔어요!' : n === 2 ? '와! 2명이 왔어요!' : '1명이 왔어요!';
+  const ns = giveBirds(pl, ids);
+  await new Promise(res => {
+    let done = false; const close = () => { if (done) return; done = true; OV.hidden = true; OV.innerHTML = ''; OV.onclick = null; res(); };
+    if (!pl.cpu){ $('.tap', OV).textContent = '톡 하면 계속해요'; OV.onclick = close; }
+    setTimeout(close, pl.cpu ? 1400 : 3000);
+  });
+  await announceSets(pl, ns);
+}
+
+const EVENTS = [
+  { w:3, title:'귤 100개 당첨!', text:'귤 좋아하는 오목눈이들이 몰려왔어요. 손님 2명!', run: pl => ['mandarin', randomBird(false)] },
+  { w:2, title:'무대 공연 대성공!', text:'응원하던 손님 1명이 오고, 주사위를 한 번 더 굴려요!', run: pl => { pl.extra = true; return [randomBird(false)]; } },
+  { w:2, title:'인기 키캡 투표 1등!', text:'리본 손님이 찾아왔어요!', run: pl => [randomBird(true)] },
+  { w:2, title:'바람 타고 슝~', text:'앞으로 3칸 날아가요!', move:3 },
+  { w:2, title:'비가 와요', text:'우산이 없는 손님 1명이 집에 갔어요.', rain:true },
+  { w:1, title:'길을 잃었어요', text:'뒤로 2칸 돌아가요.', move:-2 },
+];
+async function eventCard(pl){
+  const total = EVENTS.reduce((s, e) => s + e.w, 0);
+  let r = Math.random() * total, ev = EVENTS[0];
+  for (const e of EVENTS){ if (r < e.w){ ev = e; break; } r -= e.w; }
+  if (ev.run){
+    const ids = ev.run(pl); const ns = giveBirds(pl, ids);
+    await showCard(pl, { title:ev.title, art:birdArt(ids), text:ev.text });
+    await announceSets(pl, ns);
+  } else if (ev.rain){
+    const done = setsDone(pl).flatMap(s => s.ids);
+    let idx = -1;
+    for (let i = pl.birds.length - 1; i >= 0; i--){ if (!BIRDS[pl.birds[i]].sp && !done.includes(pl.birds[i])){ idx = i; break; } }
+    if (idx < 0){ await showCard(pl, { title:'비가 와요', text:'그래도 손님들이 우산을 쓰고 기다려 줬어요!', tone:'pop' }); return; }
+    const [gone] = pl.birds.splice(idx, 1); renderHud(); floatAtNode(pl, '-1');
+    await showCard(pl, { title:ev.title, art:`<div class="bn"><img src="${birdSrc(gone)}" alt="" style="filter:grayscale(.6);transform:rotate(-8deg)">${BIRDS[gone].name}</div>`, text:ev.text, tone:'bad' });
+  } else {
+    await showCard(pl, { title:ev.title, text:ev.text, tone: ev.move > 0 ? 'good' : 'bad' });
+    if (ev.move > 0){ await moveSteps(pl, ev.move); await tileEffect(pl, true); }
+    else { for (let i = 0; i < -ev.move && pl.hist.length; i++){ pl.pos = pl.hist.pop(); placeTokens(pl.who); sfx.step(); await wait(300); } await tileEffect(pl, true); }
+  }
+}
+
+/* 아이스크림 퀴즈: 주문을 잠깐 보여주고 기억해서 맞히기 */
+async function quiz(pl){
+  const n = G.round >= 5 ? 3 : 2;
+  const order = Array.from({ length:n }, () => pick(FKEYS));
+  const bird = randomBird(false);
+  if (pl.cpu){
+    const ok = Math.random() < CPU_QUIZ[S.diff];
+    const ids = ok ? [randomBird(false), randomBird(false)] : [];
+    const ns = ok ? giveBirds(pl, ids) : [];
+    await showCard(pl, { title: ok ? '퀴즈 정답!' : '퀴즈 아쉬워~', art: ok ? birdArt(ids) : `<div class="bn"><img src="${birdSrc(bird)}" alt="" style="transform:rotate(-8deg)">${BIRDS[bird].name}</div>`,
+      text: ok ? '주문을 딱 기억해서 손님 2명!' : '주문을 깜빡했어요.', tone: ok ? 'good' : 'bad' });
+    await announceSets(pl, ns);
+    return;
+  }
+  const picked = [];
+  OV.className = 'overlay';
+  OV.innerHTML = `<div class="card"><span class="who">아이스크림 퀴즈</span><h3>주문을 잘 기억해요!</h3>
+    <div class="quiz-order"><img class="qbird" src="${birdSrc(bird)}" alt=""><div class="qbubble" id="qb">${iceSVG(order)}</div></div>
+    <div class="qtimer"><i id="qt"></i></div>
+    <p id="qtxt">아래부터 차례대로 ${n}개! 곧 사라져요</p>
+    <div class="qbtns" id="qbtns" hidden>${FKEYS.map(f => `<button class="qbtn" data-f="${f}">${iconScoop(f)}${FLAVORS[f].name}</button>`).join('')}</div></div>`;
+  OV.hidden = false; sfx.pop();
+  const qt = $('#qt'); qt.style.transition = `width ${QUIZ_SHOW}s linear`; requestAnimationFrame(() => requestAnimationFrame(() => qt.style.width = '0%'));
+  await wait(QUIZ_SHOW * 1000);
+  $('#qb').innerHTML = `<span class="qmark">?</span>`;
+  $('#qtxt').textContent = `기억나는 대로 아래부터 골라요 (0 / ${n})`;
+  $('#qbtns').hidden = false;
+  const ok = await new Promise(res => {
+    $('#qbtns').onclick = e => {
+      const b = e.target.closest('[data-f]'); if (!b) return;
+      picked.push(b.dataset.f); sfx.tap();
+      $('#qb').innerHTML = iceSVG(picked);
+      $('#qtxt').textContent = `기억나는 대로 아래부터 골라요 (${picked.length} / ${n})`;
+      if (picked.length >= n){ $('#qbtns').onclick = null; res(picked.every((f, i) => f === order[i])); }
+    };
+  });
+  await wait(400);
+  if (ok){
+    const ids = [randomBird(false), randomBird(false)];
+    const ns = giveBirds(pl, ids);
+    await showCard(pl, { title:'정답! 기억력 최고!', art:birdArt(ids), text:'손님 2명이 왔어요!', tone:'great' });
+    await announceSets(pl, ns);
+  } else {
+    await showCard(pl, { title:'아쉬워~', art:`<div class="bn" style="background:#FFF6F9;border-radius:20px;padding:4px 10px">${iceSVG(order).replace('<svg', '<svg style="width:70px;height:116px"')}정답</div>`, text:'다음 퀴즈는 꼭 맞혀요!', tone:'bad' });
+  }
+}
+
+/* =========================================================
+   이동
+   ========================================================= */
+function chooseRoute(pl){
+  if (pl.cpu){
+    const behind = score(pl).total < score(P()).total;
+    const choice = behind || Math.random() < .5 ? 'long' : 'short';
+    return wait(700).then(() => { msg(`${CH[pl.who].name}이는 <b>${choice === 'long' ? '축제 거리' : '지름길'}</b>로 가요`); return ROUTES[choice]; });
+  }
+  return new Promise(res => {
+    OV.className = 'overlay';
+    OV.innerHTML = `<div class="card"><h3>어느 길로 갈까?</h3>
+      <div class="route-row">
+        <button class="route" data-r="short"><b>지름길</b><div class="rt-icons">${['cust','ice','event'].map(tileSVG).join('')}</div><span>7칸 · 빨리 도착해서<br>1등 보너스를 노려요</span></button>
+        <button class="route" data-r="long"><b>축제 거리</b><div class="rt-icons">${['gacha','star','event'].map(tileSVG).join('')}</div><span>14칸 · 가챠와 리본 손님이<br>잔뜩 있어요</span></button>
+      </div></div>`;
+    OV.hidden = false; sfx.pop();
+    OV.onclick = e => { const b = e.target.closest('[data-r]'); if (!b) return; sfx.tap(); OV.onclick = null; OV.hidden = true; OV.innerHTML = ''; res(ROUTES[b.dataset.r]); };
+  });
+}
+async function moveSteps(pl, n){
+  for (let i = 0; i < n; i++){
+    const node = NODES[pl.pos];
+    if (node.type === 'finish') break;
+    let nxt = node.next[0];
+    if (node.next.length > 1){ placeTokens(); nxt = await chooseRoute(pl); }
+    pl.hist.push(pl.pos); pl.pos = nxt;
+    placeTokens(pl.who); sfx.step();
+    await wait(300);
+  }
+}
+
+/* =========================================================
+   차례 진행
+   ========================================================= */
+async function rollDice(){
+  const die = $('#die'); die.classList.add('rolling');
+  let v = 1;
+  for (let i = 0; i < 9; i++){ v = 1 + Math.floor(Math.random() * 6); die.innerHTML = dieFace(v); sfx.dice(); await wait(80); }
+  die.classList.remove('rolling'); void die.offsetWidth; die.classList.add('land');
+  setTimeout(() => die.classList.remove('land'), 400);
+  return v;
+}
+async function takeTurn(){
+  if (!G || G.over) return;
+  const pl = G.players[G.turn];
+  renderHud(); placeTokens();
+  if (pl.cpu){
+    msg(`${CH[pl.who].name}이가 주사위를 굴려요…`);
+    await wait(900);
+    await play(pl);
+  } else {
+    msg(G.round === 1 && !pl.hist.length ? '주사위를 굴려서 출발해요!' : '내 차례예요! 주사위를 굴려요');
+    $('#btn-roll').disabled = false;
+  }
+}
+async function play(pl){
+  if (paused) await new Promise(r => G.resume = r);
+  const v = await rollDice();
+  msg(`<b>${v}</b>칸 앞으로!`);
+  await wait(350);
+  await moveSteps(pl, v);
+  if (NODES[pl.pos].type === 'finish'){
+    const rank = G.players.filter(q => q.finishRank).length + 1;
+    pl.finishRank = rank;
+    floatAtNode(pl, `도착 +${FINISH_BONUS[rank - 1]}`); renderHud();
+    await showCard(pl, { title: rank === 1 ? '1등으로 도착!' : '도착!', text:`도착 보너스 +${FINISH_BONUS[rank - 1]}점${rank === 1 ? '! 이제 상대가 도착할 때까지 기다려요.' : ''}`, tone:'great' });
+  } else {
+    await tileEffect(pl);
+  }
+  renderHud();
+  if (G.players.every(q => q.finishRank)) return endGame();
+  if (pl.extra && !pl.finishRank){ pl.extra = false; msg('한 번 더 굴려요!'); return takeTurn(); }
+  pl.extra = false;
+  nextTurn();
+}
+function nextTurn(){
+  const other = 1 - G.turn;
+  if (!G.players[other].finishRank) G.turn = other;
+  if (G.turn === 0) G.round++;
+  takeTurn();
+}
+
+/* =========================================================
+   시작 / 끝
+   ========================================================= */
+const REC_KEY = 'omok-festival-v1';
+function loadRec(){ try { return Object.assign({ yumin:0, somin:0, draw:0 }, JSON.parse(localStorage.getItem(REC_KEY) || '{}')); } catch(e) { return { yumin:0, somin:0, draw:0 }; } }
+function saveRec(r){ try { localStorage.setItem(REC_KEY, JSON.stringify(r)); } catch(e) {} }
+
+function buildTitle(){
+  $('#pick-row').innerHTML = ['yumin','somin'].map(k => `
+    <button class="pick ${S.player === k ? 'on' : ''}" data-pick="${k}">
+      ${S.player ? `<span class="pk-tag ${S.player === k ? '' : 'cpu'}">${S.player === k ? '내가 할래!' : '컴퓨터'}</span>` : ''}
+      <div class="pk-girl">${girlImg(k, S.player === k ? 'cheer' : '')}</div>
+      <b>${CH[k].name}</b><span>${CH[k].name}이네 아이스크림</span>
+    </button>`).join('');
+  $$('#diff-chips .chip').forEach(c => c.classList.toggle('on', c.dataset.diff === S.diff));
+  $('#btn-start').disabled = !S.player;
+  const r = loadRec();
+  $('#record').textContent = (r.yumin + r.somin + r.draw) ? `축제 기록: 유민 ${r.yumin}승 · 소민 ${r.somin}승${r.draw ? ` · 무승부 ${r.draw}` : ''}` : '누가 사장님이 될지 골라요!';
+  const spots = [[30,40,'hood',110],[1060,40,'white',110],[40,560,'nest_l',150],[1010,560,'nest_r',150],[140,300,'mandarin',100],[960,300,'headphone',90]];
+  $('#title-birds').innerHTML = spots.map(([x,y,id,w], i) => `<div style="left:${x / 12}%;top:${y / 7.6}%;width:${w}px;animation-delay:${i * .35}s"><img src="${birdSrc(id)}" alt=""></div>`).join('');
+}
+function startGame(){
+  G = { players:[newPlayer(S.player, false), newPlayer(S.cpu, true)], turn:0, round:1, over:false };
+  lastTotals = [0, 0];
+  show('game'); fit();
+  drawBoard();
+  $('#hud-p-av').innerHTML = girlImg(S.player);
+  $('#hud-c-av').innerHTML = girlImg(S.cpu);
+  $('#hud-p-name').textContent = `${CH[S.player].name} (나)`;
+  $('#hud-c-name').textContent = `${CH[S.cpu].name} (컴퓨터)`;
+  $('#die').innerHTML = dieFace(1);
+  renderHud(); placeTokens();
+  OV.className = 'overlay';
+  OV.innerHTML = `<div class="card"><h3>오목눈이 축제 보드게임</h3>
+    <ul class="howto">
+      <li>${tileSVG('cust')}<span>손님 칸: 손님 1명</span></li>
+      <li>${tileSVG('star')}<span>리본 손님: 2점짜리 손님</span></li>
+      <li>${tileSVG('gacha')}<span>가챠: 손님 1~3명!</span></li>
+      <li>${tileSVG('ice')}<span>퀴즈: 주문 기억하면 손님 2명</span></li>
+      <li>${tileSVG('event')}<span>이벤트: 무슨 일이 생길까?</span></li>
+      <li>${tileSVG('fork')}<span>갈림길: 지름길 또는 축제 거리</span></li>
+    </ul>
+    <div class="tips">손님 1명 = 1점, 리본 손님 = 2점 · 세트를 모으면 보너스 · 먼저 도착하면 +${FINISH_BONUS[0]} · 둘 다 도착하면 끝!</div>
+    <button class="btn big" id="btn-go">시작!</button></div>`;
+  OV.hidden = false;
+  $('#btn-go').onclick = () => { sfx.tap(); OV.hidden = true; OV.innerHTML = ''; takeTurn(); };
+}
+function endGame(){
+  G.over = true;
+  const sp = score(P()), sc = score(C());
+  const win = sp.total > sc.total ? 'p' : sc.total > sp.total ? 'c' : 'd';
+  const rec = loadRec();
+  if (win === 'p') rec[S.player]++; else if (win === 'c') rec[S.cpu]++; else rec.draw++;
+  saveRec(rec);
+  const card = (pl, s, isWin, tag) => `<div class="res-card ${isWin ? 'win' : ''}">${isWin ? CROWN : ''}
+    <div class="rc-girl" ${pl.who === 'somin' ? 'style="background:linear-gradient(#DCEEFF,#F4F9FF)"' : ''}>${girlImg(pl.who, win === 'd' || isWin ? 'cheer' : 'sad')}</div>
+    <b>${CH[pl.who].name}</b><small>${tag}</small>
+    <div class="rc-score">${HEART}${s.total}</div>
+    <div class="rc-break">손님 ${pl.birds.length}명 ${s.birds}점 · 세트 ${s.sets}점 · 도착 ${s.fin}점</div></div>`;
+  const winner = win === 'p' ? S.player : win === 'c' ? S.cpu : null;
+  setTimeout(() => {
+    $('#scr-result').innerHTML = `
+      <h2 class="res-h">${win === 'd' ? '무승부! 둘 다 최고 사장님!' : `${CH[winner].name} 승리!`}</h2>
+      <div class="res-row">${card(P(), sp, win === 'p', '나')}${card(C(), sc, win === 'c', '컴퓨터 · 퀴즈 ' + DIFF_LABEL[S.diff])}</div>
+      <div class="res-line" style="font-family:var(--f-display);font-size:26px">“${win === 'd' ? '우리 둘 다 잘했다!' : CH[winner].lines.win}”</div>
+      <div class="nav-row"><button class="btn" id="btn-again">한 번 더!</button><button class="btn sub" id="btn-home">처음으로</button></div>`;
+    show('result');
+    if (win !== 'c'){ confetti(); sfx.win(); } else sfx.bad();
+    $('#btn-again').onclick = () => { sfx.tap(); startGame(); };
+    $('#btn-home').onclick = () => { sfx.tap(); G = null; buildTitle(); show('title'); };
+  }, 600);
+}
+
+/* 메뉴 */
+function openMenu(){
+  if (!G || G.over || !OV.hidden) return;
+  paused = true;
+  OV.className = 'overlay';
+  OV.innerHTML = `<div class="card"><h3>잠깐 멈춤</h3>
+    <div class="nav-row"><button class="btn" id="btn-resume">계속하기</button><button class="btn sub" id="btn-quit">처음으로</button></div>
+    <button class="btn sub" id="btn-snd2"><span class="snd-label">${muted ? '소리 켜기' : '소리 끄기'}</span></button></div>`;
+  OV.hidden = false;
+  $('#btn-resume').onclick = () => { paused = false; OV.hidden = true; OV.innerHTML = ''; if (G && G.resume){ const r = G.resume; G.resume = null; r(); } };
+  $('#btn-quit').onclick = () => { paused = false; OV.hidden = true; OV.innerHTML = ''; G = null; buildTitle(); show('title'); };
+  $('#btn-snd2').onclick = toggleSound;
+}
+
+/* =========================================================
+   입력 연결
+   ========================================================= */
+document.addEventListener('click', e => {
+  const pk = e.target.closest('[data-pick]');
+  if (pk){ S.player = pk.dataset.pick; S.cpu = S.player === 'yumin' ? 'somin' : 'yumin'; sfx.pop(); buildTitle(); return; }
+  const df = e.target.closest('[data-diff]');
+  if (df){ S.diff = df.dataset.diff; sfx.tap(); buildTitle(); }
+});
+$('#btn-start').addEventListener('click', () => { if (!S.player) return; sfx.tap(); startGame(); });
+$('#btn-roll').addEventListener('click', async () => {
+  if (!G || G.over || G.players[G.turn].cpu || $('#btn-roll').disabled) return;
+  $('#btn-roll').disabled = true;
+  await play(G.players[G.turn]);
+});
+$('#btn-sound').addEventListener('click', toggleSound);
+$('#btn-pause').addEventListener('click', openMenu);
+
+/* 시작 */
+['yumin','somin'].forEach(w => { const i = new Image(); i.src = `assets/girls/${w}.webp`; });
+Object.keys(BIRDS).concat('chef').forEach(id => { const i = new Image(); i.src = birdSrc(id); });
+buildTitle(); renderSoundBtn(); fit();
+})();
+</script>
+<!--ARTIFACT-BODY-END-->
+</body>
+</html>
