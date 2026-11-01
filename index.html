@@ -66,20 +66,21 @@ button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
 .logo h1{margin:4px 0 0;font-family:var(--f-display);font-weight:400;font-size:84px;line-height:1.05;color:var(--berry);text-wrap:balance;
   text-shadow:0 5px 0 #fff,0 9px 0 var(--line)}
 .title-girls{display:flex;align-items:flex-end;gap:26px;position:relative;z-index:2}
-.title-girls .tg{width:190px}
-.title-girls .tg svg{width:100%;display:block}
+.title-girls .tg{width:200px;height:240px;border-radius:50% 50% 34px 34px / 42% 42% 34px 34px;background:linear-gradient(#FFE3EC,#FFF4E6);overflow:hidden;display:flex;align-items:flex-end;justify-content:center;box-shadow:0 0 0 6px #fff,0 10px 0 6px var(--line)}
+.title-girls .tg img{width:96%;display:block}
+#tg-somin{background:linear-gradient(#DCEEFF,#F4F9FF)}
 .vs{font-family:var(--f-display);font-size:54px;color:#fff;background:var(--gold);border-radius:50%;width:92px;height:92px;display:grid;place-items:center;margin-bottom:60px;box-shadow:0 6px 0 #D89A23}
 .record{font-family:var(--f-display);font-size:22px;color:var(--ink-soft)}
 .float-birds{position:absolute;inset:0;pointer-events:none}
-.float-birds div{position:absolute;width:110px;animation:bob 2.6s ease-in-out infinite}
-.float-birds svg{width:100%;display:block}
+.float-birds div{position:absolute;width:110px;animation:bob 2.6s ease-in-out infinite;filter:drop-shadow(0 6px 8px rgba(185,64,107,.18))}
+.float-birds img{width:100%;display:block}
 
 /* ---------- select ---------- */
 .scr-h{margin:0;font-family:var(--f-display);font-weight:400;font-size:48px;color:var(--berry);text-wrap:balance;text-align:center}
 .pick-row{display:flex;gap:30px}
 .pick{width:330px;border:5px solid var(--line);background:var(--paper);border-radius:34px;padding:18px 18px 22px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;box-shadow:0 8px 0 var(--line);transition:transform .12s}
 .pick .pk-girl{width:170px;height:200px;border-radius:50%/44%;background:var(--sky);display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
-.pick .pk-girl svg{width:160px}
+.pick .pk-girl img{width:94%;display:block}
 .pick[data-pick="yumin"] .pk-girl{background:#FFE6EE}
 .pick b{font-family:var(--f-display);font-weight:400;font-size:38px}
 .pick .pk-shop{font-size:18px;color:var(--ink-soft)}
@@ -118,7 +119,7 @@ button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
 .hud-side.them{flex-direction:row-reverse;text-align:right}
 .hud-av{width:64px;height:64px;border-radius:50%;background:#FFE6EE;overflow:hidden;flex:none}
 .them .hud-av{background:var(--sky)}
-.hud-av svg{width:100%;height:100%;display:block}
+.hud-av img{width:100%;height:100%;display:block;object-fit:cover;object-position:50% 0;transform:scale(1.45);transform-origin:50% 8%}
 .hud-info{display:flex;flex-direction:column;min-width:0}
 .hud-info b{font-family:var(--f-display);font-weight:400;font-size:20px;color:var(--ink-soft);white-space:nowrap}
 .hud-score{font-family:var(--f-display);font-size:38px;line-height:1;color:var(--berry);display:flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
@@ -136,9 +137,9 @@ button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
 /* cpu panel */
 .cpu-panel{grid-area:cpu;background:var(--paper);border-radius:28px;box-shadow:0 5px 0 var(--line);display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 14px;box-sizing:border-box;min-width:0;overflow:hidden}
 .port .cpu-panel{flex-direction:row;padding:10px 18px;gap:16px}
-.cp-girl{width:150px;flex:none}
-.port .cp-girl{width:100px}
-.cp-girl svg{width:100%;display:block}
+.cp-girl{width:150px;height:170px;flex:none;border-radius:50% 50% 24px 24px / 40% 40% 24px 24px;background:linear-gradient(#DCEEFF,#F4F9FF);overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+.port .cp-girl{width:110px;height:124px}
+.cp-girl img{width:96%;display:block}
 .cp-text{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;min-width:0}
 .port .cp-text{flex:1;align-items:flex-start;text-align:left}
 .cp-sign{font-family:var(--f-display);font-size:22px;color:#fff;background:#7FB6E8;border-radius:14px;padding:4px 14px}
@@ -148,9 +149,9 @@ button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
 .cp-stage{flex:1;width:100%;position:relative;min-height:120px;display:flex;align-items:center;justify-content:center}
 .port .cp-stage{flex:none;width:230px;min-height:0;height:100%}
 .cp-birds{position:absolute;inset:0}
-.cp-bird{position:absolute;left:50%;bottom:6px;width:96px;margin-left:-48px;animation:cpvisit 1.4s ease-in-out forwards}
+.cp-bird{position:absolute;left:50%;bottom:6px;width:110px;margin-left:-55px;animation:cpvisit 1.4s ease-in-out forwards}
 .cp-bird.sad{animation-name:cpvisitSad}
-.cp-bird svg{width:100%;display:block}
+.cp-bird img{width:100%;display:block}
 .cp-mini{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
 .cp-plate{width:88%;height:26px;border-radius:13px;background:#E3E8EC;overflow:hidden;box-shadow:inset 0 0 0 3px #CBD3DA}
 .cp-plate i{display:block;height:100%;width:0;background:linear-gradient(90deg,#BFE0FF,#7FB6E8)}
@@ -178,9 +179,9 @@ button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
 .bubble .ice{width:68px;height:112px;display:block}
 .special .bubble{box-shadow:0 0 0 4px var(--gold),0 4px 0 rgba(74,56,51,.08)}
 .x2{position:absolute;top:-10px;right:-14px;font-family:var(--f-display);font-size:20px;color:#fff;background:var(--gold);border-radius:999px;padding:2px 9px;box-shadow:0 3px 0 #D89A23}
-.cust .bird{width:112px;margin-top:8px}
-.cust .bird svg{width:100%;display:block}
-.special .bird svg{filter:drop-shadow(0 0 8px rgba(245,184,61,.9))}
+.cust .bird{width:124px;height:104px;margin-top:10px;display:flex;align-items:flex-end;justify-content:center}
+.bird img{max-width:100%;max-height:100%;display:block;filter:drop-shadow(0 4px 4px rgba(74,56,51,.15))}
+.special .bird img{filter:drop-shadow(0 0 7px rgba(245,184,61,.95))}
 .pat{width:104px;height:12px;border-radius:6px;background:rgba(255,255,255,.9);overflow:hidden;box-shadow:inset 0 0 0 2px #E4EEF7}
 .pat i{display:block;height:100%;width:100%;background:var(--mint);border-radius:6px}
 .pat i.warn{background:var(--butter)}
@@ -213,9 +214,8 @@ button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
 .r-cust{display:flex;align-items:center;gap:6px;position:relative}
 .r-cust.arrive{animation:flyin .6s cubic-bezier(.2,.9,.3,1.2)}
 .r-cust.leave{animation:leaveHappy .6s ease-in forwards}
-.r-cust .bird{width:118px}
-.r-cust .bird svg{width:100%;display:block}
-.r-cust.special .bird svg{filter:drop-shadow(0 0 8px rgba(245,184,61,.9))}
+.r-cust .bird{width:124px;height:118px;display:flex;align-items:flex-end;justify-content:center}
+.r-cust.special .bird img{filter:drop-shadow(0 0 7px rgba(245,184,61,.95))}
 .r-cust.nudge .r-bubble{animation:nudge .35s}
 .r-bubble{position:relative;background:var(--paper);border-radius:22px;padding:8px 16px 8px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 0 rgba(74,56,51,.08)}
 .r-bubble::before{content:"";position:absolute;left:-12px;top:50%;margin-top:-10px;border:10px solid transparent;border-right-color:var(--paper);border-left:0}
@@ -302,8 +302,14 @@ button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
 .res-card{width:300px;background:var(--paper);border-radius:34px;padding:16px 18px 20px;box-shadow:0 8px 0 var(--line);display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;box-sizing:border-box}
 .res-card.win{box-shadow:0 0 0 6px var(--gold),0 10px 0 #D89A23;transform:translateY(-10px)}
 .res-card .crown{position:absolute;top:-46px;width:90px;animation:bob 1.6s ease-in-out infinite}
-.res-card .rc-girl{width:170px}
-.res-card .rc-girl svg{width:100%;display:block}
+.res-card .rc-girl{width:180px;height:210px;border-radius:50% 50% 26px 26px / 40% 40% 26px 26px;background:linear-gradient(#FFE3EC,#FFF4E6);overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+.res-card .rc-girl img{width:96%;display:block}
+.bird.happy img,.cp-bird.happy img{animation:hop .45s ease-in-out 2}
+.bird.sad img,.cp-bird.sad img{filter:grayscale(.55) brightness(.96);transform:rotate(-9deg);transition:transform .2s}
+.girl-img{transform-origin:50% 100%}
+.girl-img.cheer{animation:hop .45s ease-in-out 2}
+.girl-img.cheer.loop{animation:hop .9s ease-in-out infinite}
+.girl-img.sad{filter:saturate(.5) brightness(.97);transform:rotate(-4deg)}
 .res-card b{font-family:var(--f-display);font-weight:400;font-size:32px}
 .res-card small{font-size:17px;color:var(--ink-soft)}
 .res-card .rc-score{font-family:var(--f-display);font-size:56px;color:var(--berry);display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums;line-height:1.1}
@@ -313,6 +319,7 @@ button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
 .res-line{font-family:var(--f-display);font-size:26px;color:var(--ink)}
 
 @keyframes bob{50%{transform:translateY(-10px)}}
+@keyframes hop{50%{transform:translateY(-14px) scale(1.04)}}
 @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
 @keyframes pulse{to{transform:scale(1.08)}}
 @keyframes flash{50%{background:#FFE08A}}
@@ -494,7 +501,9 @@ const ROLLF = { straw:'딸기', oreo:'오레오', milk:'흰우유' };
 const TOPS = { cherry:'체리', sprinkle:'스프링클', heart:'하트쿠키' };
 const TKEYS = Object.keys(TOPS);
 const CONT = { cup:'컵', cone:'콘' };
-const RIBBONS = ['#F48FB1','#8EC5F5','#FFD54F','#B79CF2'];
+// 같은 손님이 연달아 나오지 않게 골라 주기
+let lastBird = '';
+function pickBird(special){ const pool = special ? BIRDS_SPECIAL : BIRDS_NORMAL; let id; do { id = pick(pool); } while (id === lastBird && pool.length > 1); lastBird = id; return id; }
 
 /* =========================================================
    작은 도우미들
@@ -564,62 +573,13 @@ function toggleSound(){ muted = !muted; try { localStorage.setItem('omok-muted',
 const HEART = '<svg viewBox="0 0 24 22" aria-hidden="true"><path d="M12 21C5 15.5 1 12 1 7a5.5 5.5 0 0 1 11-2.5A5.5 5.5 0 0 1 23 7c0 5-4 8.5-11 14z" fill="#F0628F"/><ellipse cx="7" cy="7" rx="2.4" ry="1.6" fill="#fff" opacity=".6"/></svg>';
 const CROWN = '<svg class="crown" viewBox="0 0 60 40" aria-hidden="true"><path d="M4 36L8 10l12 14L30 4l10 20 12-14 4 26z" fill="#F5B83D" stroke="#C98A1A" stroke-width="2" stroke-linejoin="round"/><circle cx="30" cy="24" r="4" fill="#F0628F"/><circle cx="16" cy="29" r="2.6" fill="#8EC5F5"/><circle cx="44" cy="29" r="2.6" fill="#8EC5F5"/></svg>';
 
-function birdSVG(o = {}){
-  const { mood = 'normal', acc = null, ribbon = null } = o;
-  const eyeC = '#2B211E';
-  let eyes;
-  if (mood === 'happy') eyes = `<path d="M39 57q7-8 14 0M67 57q7-8 14 0" stroke="${eyeC}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
-  else if (mood === 'sad') eyes = `<path d="M40 53l11 5M80 53l-11 5" stroke="${eyeC}" stroke-width="3.6" fill="none" stroke-linecap="round"/><circle cx="46" cy="61" r="4" fill="${eyeC}"/><circle cx="74" cy="61" r="4" fill="${eyeC}"/>`;
-  else eyes = `<circle cx="46" cy="57" r="5.8" fill="${eyeC}"/><circle cx="74" cy="57" r="5.8" fill="${eyeC}"/><circle cx="48" cy="55" r="2" fill="#fff"/><circle cx="76" cy="55" r="2" fill="#fff"/>`;
-  let a = '';
-  if (ribbon) a = `<g transform="translate(80 24) rotate(18)"><path d="M0 0L-15-10v20z" fill="${ribbon}"/><path d="M0 0L15-10v20z" fill="${ribbon}"/><path d="M-11-4l4 2M11-4l-4 2" stroke="#fff" stroke-width="1.6" opacity=".7"/><circle r="4.5" fill="${ribbon}" stroke="#fff" stroke-width="1.6"/></g>`;
-  else if (acc === 'flower') a = `<g transform="translate(78 26)">${[0,72,144,216,288].map(r=>`<circle cx="0" cy="-7" r="5.5" fill="#F9A8C4" transform="rotate(${r})"/>`).join('')}<circle r="4" fill="#FFD54F"/></g>`;
-  else if (acc === 'leaf') a = `<g transform="translate(64 22) rotate(-30)"><ellipse rx="6" ry="13" fill="#8BCF7A"/><path d="M0-11v22" stroke="#5FA650" stroke-width="1.6"/></g>`;
-  else if (acc === 'mandarin') a = `<g transform="translate(60 22)"><circle r="11" fill="#FFA43B"/><circle cx="-3" cy="-3" r="3" fill="#FFC77A"/><ellipse cx="4" cy="-12" rx="5" ry="2.6" fill="#6DBE5A" transform="rotate(-20 4 -12)"/></g>`;
-  return `<svg viewBox="0 0 120 112" aria-hidden="true">
-    <ellipse cx="24" cy="44" rx="10" ry="25" transform="rotate(-38 24 44)" fill="#5B4740"/>
-    <ellipse cx="96" cy="44" rx="10" ry="25" transform="rotate(38 96 44)" fill="#5B4740"/>
-    <path d="M92 70L118 56l2 7-24 15z" fill="#4E3B35"/>
-    <ellipse cx="60" cy="64" rx="45" ry="41" fill="#fff" stroke="#EADFD8" stroke-width="2"/>
-    <path d="M17 62q-3 26 20 34q-8-18 2-36z" fill="#6B5148"/>
-    <path d="M103 62q3 26-20 34q8-18-2-36z" fill="#6B5148"/>
-    ${eyes}
-    <path d="M55 64h10l-5 7z" fill="#F29B38"/>
-    <ellipse cx="35" cy="69" rx="8" ry="5" fill="#F7A1B4" opacity=".75"/>
-    <ellipse cx="85" cy="69" rx="8" ry="5" fill="#F7A1B4" opacity=".75"/>
-    <path d="M50 104v6M70 104v6" stroke="#E08B3A" stroke-width="3" stroke-linecap="round"/>
-    ${a}
-  </svg>`;
-}
-
-function girlSVG(who, mood = 'happy', crop = false){
-  const Y = who === 'yumin';
-  const hair = '#2C1F1B', skin = '#FFE4D4';
-  const top = Y ? '#FFF1DA' : '#F9B9CF', topLine = Y ? '#E8CBA0' : '#E58FAF';
-  const back = Y
-    ? `<path d="M20 60Q16 16 60 14q44 2 40 46l4 66q-12 8-24 2l-2-32H42l-2 32q-12 6-24-2z" fill="${hair}"/>`
-    : `<path d="M21 62Q18 18 60 16q42 2 39 46l2 28q-13 8-23 2H42q-10 6-23-2z" fill="${hair}"/><circle cx="60" cy="13" r="11" fill="${hair}"/><rect x="51" y="20" width="18" height="6" rx="3" fill="#F48FB1"/>`;
-  const body = `<path d="M28 150q0-46 32-50q32 4 32 50z" fill="${top}" stroke="${topLine}" stroke-width="2"/>
-    <path d="M44 150l2-38q14-4 28 0l2 38z" fill="#fff" stroke="#F2C3D3" stroke-width="2"/>
-    <path d="M56 129h8l-4 10z" fill="#F2C27B"/><circle cx="60" cy="126" r="5" fill="#F9B3C6"/>`;
-  const head = `<circle cx="60" cy="60" r="37" fill="${skin}"/>`;
-  const bangs = Y
-    ? `<path d="M23 62q-1-38 37-40q38 2 37 38q-7-14-17-24q-14 14-40 14q-10 2-17 12z" fill="${hair}"/>
-       <g transform="translate(86 34) rotate(20)"><ellipse cx="-4" cy="-7" rx="3" ry="6.5" fill="#fff" stroke="#F48FB1" stroke-width="1.6"/><ellipse cx="4" cy="-7" rx="3" ry="6.5" fill="#fff" stroke="#F48FB1" stroke-width="1.6"/><circle r="6" fill="#fff" stroke="#F48FB1" stroke-width="1.6"/><circle cx="-2" cy="-1" r="1" fill="#4A3833"/><circle cx="2" cy="-1" r="1" fill="#4A3833"/></g>`
-    : `<path d="M23 64q-3-42 37-42q40 0 37 42q-3-14-9-18q-8 6-16 0q-10 7-20 0q-10 6-18 0q-7 6-11 18z" fill="${hair}"/>`;
-  const E = '#3A2722';
-  let eyes;
-  if (mood === 'cheer') eyes = `<path d="M40 67q6-8 12 0M68 67q6-8 12 0" stroke="${E}" stroke-width="3.2" fill="none" stroke-linecap="round"/>`;
-  else eyes = `<ellipse cx="46" cy="65" rx="6" ry="7.5" fill="${E}"/><ellipse cx="74" cy="65" rx="6" ry="7.5" fill="${E}"/>
-    <circle cx="48.4" cy="62" r="2.5" fill="#fff"/><circle cx="76.4" cy="62" r="2.5" fill="#fff"/><circle cx="44.5" cy="68.5" r="1.2" fill="#fff"/><circle cx="72.5" cy="68.5" r="1.2" fill="#fff"/>`;
-  let mouth;
-  if (mood === 'cheer') mouth = `<path d="M52 76q8 13 16 0z" fill="#D9576B"/><path d="M55 80q5 3 10 0" stroke="#F49AA8" stroke-width="2" fill="none"/>`;
-  else if (mood === 'sad') mouth = `<path d="M53 81q7-6 14 0" stroke="#B5525F" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M82 70q3 6 0 9q-3-3 0-9z" fill="#8EC5F5"/>`;
-  else if (mood === 'pout') mouth = `<ellipse cx="60" cy="79" rx="4.5" ry="4" fill="#E07A8A"/><ellipse cx="59" cy="78" rx="1.6" ry="1.2" fill="#F7B3BE"/>`;
-  else mouth = `<path d="M53 76q7 7 14 0" stroke="#B5525F" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
-  const blush = `<ellipse cx="37" cy="76" rx="7" ry="4.5" fill="#FFAFBF" opacity=".85"/><ellipse cx="83" cy="76" rx="7" ry="4.5" fill="#FFAFBF" opacity=".85"/>`;
-  return `<svg viewBox="${crop ? '14 8 92 92' : '0 0 120 150'}" aria-hidden="true">${back}${body}${head}${bangs}${eyes}${blush}${mouth}</svg>`;
-}
+/* 유민이가 만든 그림에서 오려낸 캐릭터들 */
+const BIRDS_NORMAL = ['nest_l','grey','headphone','hood','mandarin','white','fest_b','fest_c'];
+const BIRDS_SPECIAL = ['bow_pink','bow_blue','bow_yellow','bow_purple','nest_r'];
+const birdSrc = id => `assets/birds/${id}.webp`;
+const birdImg = id => `<img src="${birdSrc(id)}" alt="" draggable="false">`;
+const girlImg = (who, mood = '') => `<img class="girl-img ${mood}" src="assets/girls/${who}.webp" alt="${who === 'yumin' ? '유민' : '소민'}" draggable="false">`;
+function preloadArt(){ [...BIRDS_NORMAL, ...BIRDS_SPECIAL, 'chef'].forEach(id => { const i = new Image(); i.src = birdSrc(id); }); ['yumin','somin'].forEach(w => { const i = new Image(); i.src = `assets/girls/${w}.webp`; }); }
 
 function scoopG(f, cx, cy, r = 25){
   const F = FLAVORS[f];
@@ -750,10 +710,10 @@ function replay(el, cls){ el.classList.remove(cls); void el.offsetWidth; el.clas
 
 /* ---------- 타이틀 ---------- */
 function buildTitle(){
-  $('#tg-yumin').innerHTML = girlSVG('yumin', 'happy');
-  $('#tg-somin').innerHTML = girlSVG('somin', 'pout');
-  const spots = [[60,90,null,null],[1030,70,'flower',null],[110,520,null,'#8EC5F5'],[1010,500,'mandarin',null],[220,250,'leaf',null],[900,260,null,'#F48FB1']];
-  $('#title-birds').innerHTML = spots.map(([x,y,acc,rib],i) => `<div style="left:${x / 12}%;top:${y / 7.6}%;animation-delay:${i * .35}s">${birdSVG({ acc, ribbon:rib, mood: i % 3 === 0 ? 'happy' : 'normal' })}</div>`).join('');
+  $('#tg-yumin').innerHTML = girlImg('yumin');
+  $('#tg-somin').innerHTML = girlImg('somin');
+  const spots = [[50,60,'hood',120],[1020,60,'white',120],[60,480,'nest_l',150],[1020,470,'nest_r',150],[200,250,'mandarin',100],[930,270,'headphone',90]];
+  $('#title-birds').innerHTML = spots.map(([x,y,id,w],i) => `<div style="left:${x / 12}%;top:${y / 7.6}%;width:${w}px;animation-delay:${i * .35}s">${birdImg(id)}</div>`).join('');
   renderRecord();
 }
 
@@ -762,7 +722,7 @@ function buildSelect(){
   $('#pick-row').innerHTML = ['yumin','somin'].map(k => `
     <button class="pick ${S.player === k ? 'on' : ''}" data-pick="${k}">
       ${S.player ? `<span class="pk-tag ${S.player === k ? '' : 'cpu'}">${S.player === k ? '내가 할래!' : '컴퓨터'}</span>` : ''}
-      <div class="pk-girl">${girlSVG(k, S.player === k ? 'cheer' : (k === 'somin' ? 'pout' : 'happy'))}</div>
+      <div class="pk-girl">${girlImg(k, S.player === k ? 'cheer' : '')}</div>
       <b>${CH[k].name}</b>
       <span class="pk-shop">${CH[k].shop}</span>
       <span class="pk-perk"><strong>${CH[k].perk}</strong>${CH[k].perkDesc}</span>
@@ -785,8 +745,8 @@ function buildMode(){
 
 /* ---------- HUD ---------- */
 function hudInit(kind){
-  $('#hud-p-av').innerHTML = girlSVG(S.player, 'happy', true);
-  $('#hud-c-av').innerHTML = girlSVG(S.cpu, 'happy', true);
+  $('#hud-p-av').innerHTML = girlImg(S.player);
+  $('#hud-c-av').innerHTML = girlImg(S.cpu);
   $('#hud-p-name').textContent = `${CH[S.player].name} (나)`;
   $('#hud-c-name').textContent = `${CH[S.cpu].name} (컴퓨터)`;
   hudScore(0, 0, true);
@@ -813,7 +773,7 @@ const rubber = (p, c) => (c - p > 20 ? 1.35 : p - c > 25 ? 0.85 : 1);
 /* ---------- 컴퓨터 상대 패널 ---------- */
 function cpuPanel(kind){
   $('#cpu-panel').innerHTML = `
-    <div class="cp-girl" id="cp-girl">${girlSVG(S.cpu, 'happy')}</div>
+    <div class="cp-girl" id="cp-girl">${girlImg(S.cpu)}</div>
     <div class="cp-text">
       <div class="cp-sign">${CH[S.cpu].shop}</div>
       <div class="cp-say" id="cp-say">${pick(CH[S.cpu].lines.start)}</div>
@@ -827,9 +787,10 @@ function cpuSay(t){ const el = $('#cp-say'); if (!el) return; el.textContent = t
 let cpuMoodT = 0;
 function cpuMood(m){
   const el = $('#cp-girl'); if (!el) return;
-  el.innerHTML = girlSVG(S.cpu, m);
+  const img = $('img', el); if (!img) return;
+  img.classList.remove('cheer', 'sad'); void img.offsetWidth; img.classList.add(m);
   clearTimeout(cpuMoodT);
-  cpuMoodT = setTimeout(() => { const e = $('#cp-girl'); if (e) e.innerHTML = girlSVG(S.cpu, 'happy'); }, 1000);
+  cpuMoodT = setTimeout(() => img.classList.remove('cheer', 'sad'), 1100);
 }
 
 /* =========================================================
@@ -886,7 +847,7 @@ function OrderGame(){
   function custHTML(c){
     return `<div class="cust ${c.special ? 'special' : ''}">
       <div class="bubble">${iceSVG(c.o)}${c.special ? '<span class="x2">×2</span>' : ''}</div>
-      <div class="bird">${birdSVG({ acc:c.acc, ribbon:c.ribbon })}</div>
+      <div class="bird">${birdImg(c.img)}</div>
       <div class="pat"><i></i></div>
       <div class="say"></div>
     </div>`;
@@ -895,7 +856,7 @@ function OrderGame(){
     const o = makeOrder(g.el);
     const special = Math.random() < (S.player === 'somin' ? .28 : .15);
     const max = 15 + o.scoops.length * 5 + (o.topping ? 3 : 0);
-    const c = { o, special, max, left:max, ribbon: special ? pick(RIBBONS) : null, acc: special ? null : pick([null, null, 'flower', 'leaf', 'mandarin']) };
+    const c = { o, special, max, left:max, img: pickBird(special) };
     slotEls[i].innerHTML = custHTML(c);
     c.el = slotEls[i].firstElementChild; c.bar = $('.pat i', c.el);
     g.slots[i] = c; sfx.pop();
@@ -904,7 +865,7 @@ function OrderGame(){
   function leave(i, happy){
     const c = g.slots[i]; if (!c) return;
     g.slots[i] = null;
-    $('.bird', c.el).innerHTML = birdSVG({ acc:c.acc, ribbon:c.ribbon, mood: happy ? 'happy' : 'sad' });
+    $('.bird', c.el).classList.add(happy ? 'happy' : 'sad');
     const el = c.el;
     setTimeout(() => el.classList.add(happy ? 'leave-happy' : 'leave-sad'), happy ? 250 : 500);
     setTimeout(() => { if (el.parentNode) el.remove(); }, 1300);
@@ -958,9 +919,9 @@ function OrderGame(){
     const box = $('#cp-birds'); if (!box) return;
     const b = document.createElement('div');
     b.className = 'cp-bird' + (ok ? '' : ' sad');
-    b.innerHTML = birdSVG({ mood: ok ? 'normal' : 'sad', acc: pick([null,'flower','leaf']) });
+    b.innerHTML = birdImg(pick(BIRDS_NORMAL));
     box.appendChild(b);
-    setTimeout(() => { if (ok) b.innerHTML = birdSVG({ mood:'happy' }); }, 600);
+    setTimeout(() => b.classList.add(ok ? 'happy' : 'sad'), 600);
     setTimeout(() => b.remove(), 1450);
     if (ok){
       let pts = rint(...d.orderPts); if (Math.random() < .15) pts *= 2;
@@ -1011,9 +972,9 @@ function RollGame(){
   function newCust(){
     const f = pick(['straw','oreo','milk']);
     const special = Math.random() < (S.player === 'somin' ? .28 : .15);
-    g.cust = { f, special, ribbon: special ? pick(RIBBONS) : null, acc: special ? null : pick([null,'flower','leaf','mandarin']) };
+    g.cust = { f, special, img: pickBird(special) };
     custEl.className = 'r-cust' + (special ? ' special' : '');
-    custEl.innerHTML = `<div class="bird">${birdSVG({ acc:g.cust.acc, ribbon:g.cust.ribbon })}</div>
+    custEl.innerHTML = `<div class="bird">${birdImg(g.cust.img)}</div>
       <div class="r-bubble ${special ? 'gold' : ''}">${jugSVG(f)}<div><b>${ROLLF[f]} 롤</b><small>${ROLLS}개 주세요!</small></div>${special ? '<span class="x2">×2</span>' : ''}</div>
       <div class="say"></div>`;
     replay(custEl, 'arrive');
@@ -1031,7 +992,7 @@ function RollGame(){
     g.phase = p;
     const idx = { pour:0, chop:1, spread:2, roll:3, serve:4 }[p];
     steps.forEach((li, i) => { li.classList.toggle('on', i === idx); li.classList.toggle('done', i < idx); });
-    hint.textContent = p === 'chop' ? '톡톡!' : p === 'spread' ? '슥슥 문질러요' : '';
+    hint.textContent = p === 'chop' ? '톡톡!' : p === 'spread' ? '슥슥!' : '';
     needleEl = null;
     if (p === 'pour') ctrl.innerHTML = `<div class="ctrl-msg">손님이 원하는 맛을 철판에 부어요</div>` +
       ['straw','oreo','milk'].map(f => `<button class="tile jug" data-act="pour" data-val="${f}">${jugSVG(f)}<span>${ROLLF[f]}</span></button>`).join('');
@@ -1121,7 +1082,7 @@ function RollGame(){
     g.score += pts; g.cups++;
     hudScore(g.score, g.cscore); hudPill('p', `${g.cups}컵`);
     setPhase('serve'); resetPlate();
-    $('.bird', custEl).innerHTML = birdSVG({ acc:g.cust.acc, ribbon:g.cust.ribbon, mood:'happy' });
+    $('.bird', custEl).classList.add('happy');
     $('.r-bubble', custEl).innerHTML = `${rollCupSVG(g.cust.f)}<span class="got">+${pts}</span>`;
     floatAt($('.bird', custEl), `${HEART}+${pts}`, g.cust.special || allPerfect ? 'big' : '', -30);
     if (allPerfect) setTimeout(() => floatAt(plate, '올 퍼펙트! +2', 'perfect'), 200);
@@ -1239,7 +1200,7 @@ function showResult(){
   saveRec(rec);
   const card = (who, score, isWin, tag) => `<div class="res-card ${isWin ? 'win' : ''}">
     ${isWin ? CROWN : ''}
-    <div class="rc-girl">${girlSVG(who, win === 'd' ? 'happy' : isWin ? 'cheer' : 'sad')}</div>
+    <div class="rc-girl">${girlImg(who, win === 'd' ? 'cheer' : isWin ? 'cheer loop' : 'sad')}</div>
     <b>${CH[who].name}</b><small>${tag}</small>
     <div class="rc-score">${HEART}${score}</div></div>`;
   const winner = win === 'p' ? S.player : win === 'c' ? S.cpu : null;
@@ -1339,6 +1300,7 @@ function loop(t){
 }
 
 /* ---------- 시작 ---------- */
+preloadArt();
 buildTray();
 buildTitle();
 renderSoundBtn();
