@@ -1,11 +1,11 @@
 """코넬 노트식 속지 편집 창 (2단계).
 
-속지(Sheet) 한 장 = 날짜 하나.
-    머리줄  : Date. 2026-11-10 (화)
+속지(Sheet) 한 장 = 날짜 하나. 날짜는 창 위쪽 막대에만 표시한다.
     일정    : 전체 폭 자유 텍스트 (왼쪽에 작은 '일정' 글씨)
     일지    : 왼쪽 개요 칸(타임스탬프, 편집 가능) | 오른쪽 본문  — 이름표 없음
     내일 할 일: 전체 폭 자유 텍스트 (왼쪽에 작은 '내일 할 일' 글씨)
 가로 경계선을 끌면 줄 수, 세로선을 끌면 개요 칸 폭, Ctrl+휠은 확대/축소.
+서식은 굵게(Ctrl+B)·밑줄(Ctrl+U)만. 글꼴은 글자별이 아니라 프로그램 전체에 하나.
 """
 from __future__ import annotations
 
@@ -14,13 +14,13 @@ from typing import Callable, Optional
 
 from PySide6.QtCore import QDate, QPoint, Qt, QTimer, Signal
 from PySide6.QtGui import (
-    QAction, QColor, QFont, QFontMetrics, QKeySequence, QPainter, QPen, QShortcut,
-    QTextBlockFormat, QTextCursor,
+    QAction, QColor, QFont, QFontDatabase, QFontMetrics, QKeySequence, QPainter, QPen,
+    QTextBlockFormat, QTextCharFormat, QTextCursor, QTextDocumentFragment,
 )
 from PySide6.QtWidgets import (
-    QApplication, QCalendarWidget, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit,
-    QMainWindow, QMenu, QMessageBox, QPushButton, QScrollArea, QTextEdit, QToolButton,
-    QVBoxLayout, QWidget, QWidgetAction,
+    QApplication, QCalendarWidget, QDialog, QDialogButtonBox, QFileDialog, QFontComboBox, QFrame,
+    QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QScrollArea,
+    QTextEdit, QToolButton, QVBoxLayout, QWidget, QWidgetAction,
 )
 
 import layout as L
@@ -48,9 +48,42 @@ SECTION_LABELS = {"schedule": "일정", "todo": "내일 할 일"}  # 가운데(�
 _FIXED_HEIGHT = int(QTextBlockFormat.LineHeightTypes.FixedHeight.value)
 
 
-def make_font(line_height: int, scale: float = 0.5) -> QFont:
+DEFAULT_FONT = "Malgun Gothic"
+
+SHORTCUTS = [  # (단축키, 설명) — 도움말 창과 메뉴에 같이 쓰임
+    ("Ctrl+T", "타임스탬프 넣기 / 다시 누르면 빼기 (지금 문단의 왼쪽 칸)"),
+    ("Ctrl+B", "굵게 켜기/끄기"),
+    ("Ctrl+U", "밑줄 켜기/끄기"),
+    ("Ctrl+PgUp", "전날로"),
+    ("Ctrl+PgDown", "다음날로"),
+    ("Ctrl+= / Ctrl+-", "크게 / 작게 (Ctrl+마우스 휠도 됨)"),
+    ("Ctrl+Z / Ctrl+Y", "되돌리기 / 다시 하기"),
+    ("F1", "이 단축키 목록"),
+]
+MOUSE_HELP = [
+    ("굵은 가로선 끌기", "그 위 구역의 줄 수 늘리기/줄이기"),
+    ("점선 세로선 끌기", "타임스탬프 칸 폭 조절"),
+    ("타임스탬프 칸에서 Enter", "그 문단 본문 끝으로 이동"),
+]
+
+
+def _u16(text: str) -> int:
+    """Qt 글자 위치(UTF-16) 단위 길이."""
+    return len(text.encode("utf-16-le")) // 2
+
+
+def _u16_to_py(text: str, pos: int) -> int:
+    acc = 0
+    for i, ch in enumerate(text):
+        if acc >= pos:
+            return i
+        acc += 2 if ord(ch) > 0xFFFF else 1
+    return len(text)
+
+
+def make_font(line_height: int, scale: float = 0.5, family: str = DEFAULT_FONT) -> QFont:
     f = QFont()
-    f.setFamilies(FONT_FAMILIES)
+    f.setFamilies([family] + [x for x in FONT_FAMILIES if x != family])
     f.setPixelSize(max(9, round(line_height * scale)))
     return f
 
@@ -89,7 +122,6 @@ class RuledEdit(QTextEdit):
         """붙여넣기는 서식 없이 글자만, 줄 높이는 유지."""
         text = source.text() if source.hasText() else ""
         if not text and source.hasHtml():
-            from PySide6.QtGui import QTextDocumentFragment
             text = QTextDocumentFragment.fromHtml(source.html()).toPlainText()
         if not text:
             return
@@ -111,8 +143,73 @@ class RuledEdit(QTextEdit):
     def wheelEvent(self, e):  # 휠은 속지(바깥 스크롤/확대)로 넘긴다
         e.ignore()
 
+    def keyPressEvent(self, e):
+        # Shift+Enter(문단 안 줄바꿈)도 보통 Enter로: 줄 = 문단으로 단순하게 유지
+        if e.key() in (Qt.Key_Return, Qt.Key_Enter) and e.modifiers() & Qt.ShiftModifier:
+            self.textCursor().insertBlock()
+            return
+        super().keyPressEvent(e)
+
     def lines(self) -> list[str]:
-        return self.toPlainText().split("\n")
+        out, block = [], self.document().begin()
+        while block.isValid():
+            out.append(block.text().replace("\u2028", " "))
+            block = block.next()
+        return out
+
+    # --- 굵게 / 밑줄 ---
+    def toggle_bold(self) -> None:
+        fmt = QTextCharFormat()
+        fmt.setFontWeight(QFont.Normal if self.fontWeight() >= QFont.DemiBold else QFont.Bold)
+        self.mergeCurrentCharFormat(fmt)
+
+    def toggle_underline(self) -> None:
+        fmt = QTextCharFormat()
+        fmt.setFontUnderline(not self.fontUnderline())
+        self.mergeCurrentCharFormat(fmt)
+
+    def marks(self) -> list[list]:
+        """[[줄, 시작, 길이, 'b'|'u'], ...] — 위치는 파이썬 글자 단위."""
+        out: list[list] = []
+        block, line = self.document().begin(), 0
+        while block.isValid():
+            text = block.text()
+            spans: dict[str, list[list[int]]] = {"b": [], "u": []}
+            for r in block.textFormats():
+                f = r.format
+                a, b = _u16_to_py(text, r.start), _u16_to_py(text, r.start + r.length)
+                if b <= a:
+                    continue
+                for style, on in (("b", f.fontWeight() >= QFont.DemiBold), ("u", f.fontUnderline())):
+                    if on:
+                        sp = spans[style]
+                        if sp and sp[-1][1] == a:  # 바로 이어지는 구간은 합친다
+                            sp[-1][1] = b
+                        else:
+                            sp.append([a, b])
+            for style, sp in spans.items():
+                out += [[line, a, b - a, style] for a, b in sp]
+            block, line = block.next(), line + 1
+        return sorted(out)
+
+    def apply_marks(self, marks: list[list]) -> None:
+        doc = self.document()
+        for line, start, length, style in marks:
+            block = doc.findBlockByNumber(line)
+            if not block.isValid():
+                continue
+            text = block.text()
+            a = block.position() + _u16(text[:start])
+            b = block.position() + _u16(text[: start + length])
+            cur = QTextCursor(doc)
+            cur.setPosition(a)
+            cur.setPosition(b, QTextCursor.KeepAnchor)
+            fmt = QTextCharFormat()
+            if style == "b":
+                fmt.setFontWeight(QFont.Bold)
+            else:
+                fmt.setFontUnderline(True)
+            cur.mergeCharFormat(fmt)
 
 
 class CueEdit(QLineEdit):
@@ -168,7 +265,7 @@ class Sheet(QWidget):
         super().__init__()
         self.lay = page_layout
         self.clock = clock
-        self.date_text = ""
+        self.font_family = DEFAULT_FONT
         self.schedule = RuledEdit(self)
         self.journal = RuledEdit(self)
         self.todo = RuledEdit(self)
@@ -211,13 +308,19 @@ class Sheet(QWidget):
 
     def _apply_metrics(self) -> None:
         lh = self.lay.line_height
-        self.text_font = make_font(lh, 0.5)
-        self.cue_font = make_font(lh, 0.46)
-        self.label_font = make_font(lh, 0.4)
+        self.text_font = make_font(lh, 0.5, self.font_family)
+        self.cue_font = make_font(lh, 0.46, self.font_family)
+        self.label_font = make_font(lh, 0.4, self.font_family)
         for e in self.edits.values():
             e.apply_metrics(lh, self.text_font)
         for c in self._cue_edits:
             c.setFont(self.cue_font)
+
+    def set_font_family(self, family: str) -> None:
+        """프로그램 전체 글꼴(글자별 글꼴은 없음)."""
+        self.font_family = family or DEFAULT_FONT
+        self._apply_metrics()
+        self.relayout()
 
     def set_layout(self, new: L.PageLayout) -> None:
         old = self.lay
@@ -289,17 +392,7 @@ class Sheet(QWidget):
         p.fillRect(self.rect(), QColor(COLORS["desk"]))
         p.fillRect(0, 0, w, bounds["todo"][1] + BOTTOM_MARGIN, QColor(COLORS["paper"]))
 
-        # 머리줄: 오른쪽에 'Date. 날짜'
-        p.setFont(self.label_font)
-        p.setPen(QColor(COLORS["label"]))
-        fm = QFontMetrics(self.label_font)
-        head = lay.header_height
-        p.drawText(w - RIGHT_MARGIN - fm.horizontalAdvance("Date.") - 4 - QFontMetrics(self.text_font).horizontalAdvance(self.date_text),
-                   head - 9, "Date.")
-        p.setFont(self.text_font)
-        p.setPen(QColor(COLORS["text"]))
-        p.drawText(w - RIGHT_MARGIN - QFontMetrics(self.text_font).horizontalAdvance(self.date_text), head - 9, self.date_text)
-
+        head = lay.header_height  # 날짜는 창 위쪽 막대에 있으므로 속지에는 위 여백만
         thin = QPen(QColor(COLORS["rule"]), 1)
         thick = QPen(QColor(COLORS["border"]), 2)
         p.setPen(thick)
@@ -420,7 +513,7 @@ class Sheet(QWidget):
             self.journal.setFocus()
 
     def stamp_current(self) -> None:
-        """Ctrl+T: 지금 있는 문단의 개요 칸에 현재 시각."""
+        """Ctrl+T: 지금 문단의 개요 칸이 비었으면 현재 시각을 넣고, 무언가 있으면 비운다."""
         focus = QApplication.focusWidget()
         if isinstance(focus, CueEdit):
             bid = focus.block_id
@@ -428,14 +521,17 @@ class Sheet(QWidget):
             bid = self.journal.textCursor().block().userState()
         if bid < 0:
             return
-        self.cues[bid] = format_stamp(self.clock())
+        self.cues[bid] = "" if self.cues.get(bid, "").strip() else format_stamp(self.clock())
         self.edited.emit()
         self.relayout()
+
+    def focused_edit(self) -> Optional[RuledEdit]:
+        focus = QApplication.focusWidget()
+        return focus if isinstance(focus, RuledEdit) and focus in self.edits.values() else None
 
     # ---------- 불러오기 / 모으기 ----------
     def load(self, page: Page, hint_todo: list[str]) -> None:
         self._loading = True
-        self.date_text = date_label(page.date)
         self.schedule.setPlainText("\n".join(page.schedule))
         self.todo.setPlainText("\n".join(page.todo))
         hint = [t for t in hint_todo if t.strip()]
@@ -450,6 +546,8 @@ class Sheet(QWidget):
             self.cues[bid] = page.journal[i].cue if i < len(page.journal) else ""
             self._prev_text[bid] = block.text()
             block, i = block.next(), i + 1
+        for sec, e in self.edits.items():
+            e.apply_marks(page.fmt.get(sec, []))
         self._apply_metrics()
         for e in self.edits.values():
             e.document().clearUndoRedoStacks()
@@ -461,11 +559,13 @@ class Sheet(QWidget):
         entries = []
         block = self.journal.document().begin()
         while block.isValid():
-            entries.append(Entry(self.cues.get(block.userState(), ""), block.text().replace(" ", " ")))
+            entries.append(Entry(self.cues.get(block.userState(), ""), block.text().replace("\u2028", " ")))
             block = block.next()
         while entries and entries[-1].is_empty():
             entries.pop()
-        return Page(date, schedule=self.schedule.lines(), journal=entries, todo=self.todo.lines())
+        fmt = {sec: e.marks() for sec, e in self.edits.items()}
+        return Page(date, schedule=self.schedule.lines(), journal=entries, todo=self.todo.lines(),
+                    fmt={k: v for k, v in fmt.items() if v})
 
 
 class MainWindow(QMainWindow):
@@ -480,6 +580,7 @@ class MainWindow(QMainWindow):
         self.resize(760, 920)
 
         self.sheet = Sheet(storage.load_layout(), clock)
+        self.sheet.set_font_family(storage.get_setting("font_family", DEFAULT_FONT))
         self.sheet.edited.connect(self._mark_dirty)
         self.sheet.layoutCommitted.connect(storage.save_layout)
 
@@ -503,67 +604,144 @@ class MainWindow(QMainWindow):
         self.save_timer.setInterval(1000)
         self.save_timer.timeout.connect(self.save)
 
-        QShortcut(QKeySequence("Ctrl+T"), self, activated=self.sheet.stamp_current)
-        QShortcut(QKeySequence("Ctrl+PgUp"), self, activated=lambda: self.go_to(self.date - dt.timedelta(days=1)))
-        QShortcut(QKeySequence("Ctrl+PgDown"), self, activated=lambda: self.go_to(self.date + dt.timedelta(days=1)))
-        QShortcut(QKeySequence("Ctrl+="), self, activated=lambda: self.sheet.zoom_by(1))
-        QShortcut(QKeySequence("Ctrl+-"), self, activated=lambda: self.sheet.zoom_by(-1))
-
         self._load()
 
     # ---------- 화면 구성 ----------
     def _build_bar(self) -> QWidget:
         bar = QWidget()
         bar.setStyleSheet("QWidget { background: #2b2d31; color: #f2f2f2; }"
-                          "QToolButton, QPushButton { border: none; padding: 6px 10px; font-size: 15px; }"
+                          "QToolButton, QPushButton { border: none; padding: 6px 12px; font-size: 18px; }"
+                          "QPushButton#date { font-size: 21px; font-weight: bold; }"
                           "QToolButton:hover, QPushButton:hover { background: #3a3d43; border-radius: 6px; }")
         h = QHBoxLayout(bar)
         h.setContentsMargins(10, 6, 10, 6)
         prev_btn = QToolButton(text="◀")
         prev_btn.setToolTip("전날 (Ctrl+PgUp)")
-        prev_btn.clicked.connect(lambda: self.go_to(self.date - dt.timedelta(days=1)))
-        self.date_btn = QPushButton()
-        self.date_btn.setToolTip("날짜 고르기")
+        prev_btn.clicked.connect(self.prev_day)
+        self.date_btn = QPushButton(objectName="date")
+        self.date_btn.setToolTip("눌러서 달력에서 날짜 고르기")
         self.date_btn.clicked.connect(self._pick_date)
         next_btn = QToolButton(text="▶")
         next_btn.setToolTip("다음날 (Ctrl+PgDown)")
-        next_btn.clicked.connect(lambda: self.go_to(self.date + dt.timedelta(days=1)))
+        next_btn.clicked.connect(self.next_day)
         today_btn = QPushButton("오늘")
-        today_btn.clicked.connect(lambda: self.go_to(self.clock().date()))
+        today_btn.clicked.connect(self.today)
         self.status = QLabel()
-        self.status.setStyleSheet("color: #9a9da3; font-size: 12px;")
+        self.status.setStyleSheet("color: #9a9da3; font-size: 13px;")
         for w in (prev_btn, self.date_btn, next_btn, today_btn):
             h.addWidget(w)
         h.addStretch(1)
         h.addWidget(self.status)
         return bar
 
-    def _build_menu(self) -> None:
-        m = self.menuBar().addMenu("파일")
-        for text, slot in (
-            ("JSON으로 백업 내보내기…", self._export_json),
-            ("JSON 백업 가져오기(합치기)…", self._import_json),
-            ("TXT로 내보내기…", self._export_text),
-        ):
+    def _add_actions(self, menu: QMenu, items) -> None:
+        """items: (글, 실행할 함수, 단축키 목록) 또는 None(구분선). 단축키는 메뉴 오른쪽에 표시됨."""
+        for item in items:
+            if item is None:
+                menu.addSeparator()
+                continue
+            text, slot, keys = item
             act = QAction(text, self)
+            if keys:
+                act.setShortcuts([QKeySequence(k) for k in keys])
             act.triggered.connect(slot)
-            m.addAction(act)
-        m.addSeparator()
-        quit_act = QAction("종료", self)
-        quit_act.triggered.connect(self.close)
-        m.addAction(quit_act)
+            menu.addAction(act)
+            self.addAction(act)  # 메뉴가 닫혀 있어도 단축키 동작
 
-        v = self.menuBar().addMenu("보기")
-        for text, slot in (("크게 (Ctrl+=)", lambda: self.sheet.zoom_by(1)),
-                           ("작게 (Ctrl+-)", lambda: self.sheet.zoom_by(-1)),
-                           ("속지 배치 처음대로", self._reset_layout)):
-            act = QAction(text, self)
-            act.triggered.connect(slot)
-            v.addAction(act)
+    def _build_menu(self) -> None:
+        mb = self.menuBar()
+        self._add_actions(mb.addMenu("파일"), [
+            ("JSON으로 백업 내보내기…", self._export_json, []),
+            ("JSON 백업 가져오기(합치기)…", self._import_json, []),
+            ("TXT로 내보내기…", self._export_text, []),
+            None,
+            ("종료", self.close, []),
+        ])
+        self._add_actions(mb.addMenu("편집"), [
+            ("타임스탬프 넣기/빼기", self.sheet.stamp_current, ["Ctrl+T"]),
+            None,
+            ("굵게", self._bold, ["Ctrl+B"]),
+            ("밑줄", self._underline, ["Ctrl+U"]),
+        ])
+        self._add_actions(mb.addMenu("이동"), [
+            ("전날", self.prev_day, ["Ctrl+PgUp"]),
+            ("다음날", self.next_day, ["Ctrl+PgDown"]),
+            ("오늘", self.today, []),
+            ("날짜 고르기…", self._pick_date, []),
+        ])
+        self._add_actions(mb.addMenu("보기"), [
+            ("크게", lambda: self.sheet.zoom_by(1), ["Ctrl+=", "Ctrl++"]),
+            ("작게", lambda: self.sheet.zoom_by(-1), ["Ctrl+-"]),
+            None,
+            ("글꼴 바꾸기…", self._choose_font, []),
+            ("속지 배치 처음대로", self._reset_layout, []),
+        ])
+        self._add_actions(mb.addMenu("도움말"), [
+            ("단축키 목록", self.show_shortcuts, ["F1"]),
+        ])
+
+    def shortcuts_html(self) -> str:
+        def rows(title, items):
+            head = f"<tr><td colspan=2 style='padding:10px 0 4px 0'><b style='font-size:15px'>{title}</b></td></tr>"
+            return head + "".join(
+                f"<tr><td style='padding:3px 18px 3px 0'><b>{k}</b></td><td>{v}</td></tr>" for k, v in items)
+        return f"<table>{rows('단축키', SHORTCUTS)}{rows('마우스', MOUSE_HELP)}</table>"
+
+    def show_shortcuts(self) -> None:
+        box = QMessageBox(self)
+        box.setWindowTitle("도움말")
+        box.setTextFormat(Qt.RichText)
+        box.setText(self.shortcuts_html())
+        box.exec()
+
+    def _bold(self) -> None:
+        e = self.sheet.focused_edit()
+        if e:
+            e.toggle_bold()
+
+    def _underline(self) -> None:
+        e = self.sheet.focused_edit()
+        if e:
+            e.toggle_underline()
+
+    def prev_day(self) -> None:
+        self.go_to(self.date - dt.timedelta(days=1))
+
+    def next_day(self) -> None:
+        self.go_to(self.date + dt.timedelta(days=1))
+
+    def today(self) -> None:
+        self.go_to(self.clock().date())
+
+    def _choose_font(self) -> None:
+        """설치된 글꼴 중 하나를 프로그램 전체 글꼴로(한글 되는 글꼴만 보여줌). 고르는 즉시 미리보기."""
+        before = self.sheet.font_family
+        dlg = QDialog(self)
+        dlg.setWindowTitle("글꼴 바꾸기")
+        v = QVBoxLayout(dlg)
+        v.addWidget(QLabel("속지에 쓸 글꼴 (고르면 바로 미리 보입니다)"))
+        combo = QFontComboBox()
+        combo.setWritingSystem(QFontDatabase.Korean)
+        combo.setCurrentFont(QFont(before))
+        combo.currentFontChanged.connect(lambda f: self.sheet.set_font_family(f.family()))
+        v.addWidget(combo)
+        reset = QPushButton(f"기본 글꼴({DEFAULT_FONT})로")
+        reset.clicked.connect(lambda: combo.setCurrentFont(QFont(DEFAULT_FONT)))
+        v.addWidget(reset)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(dlg.accept)
+        buttons.rejected.connect(dlg.reject)
+        v.addWidget(buttons)
+        if dlg.exec() == QDialog.Accepted:
+            self.storage.set_setting("font_family", self.sheet.font_family)
+        else:
+            self.sheet.set_font_family(before)
 
     def _pick_date(self) -> None:
         menu = QMenu(self)
         cal = QCalendarWidget()
+        cal.setStyleSheet("QCalendarWidget { font-size: 16px; }")
+        cal.setMinimumSize(360, 300)
         cal.setFirstDayOfWeek(Qt.Sunday)
         cal.setGridVisible(False)
         cal.setSelectedDate(QDate(self.date.year, self.date.month, self.date.day))

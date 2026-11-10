@@ -101,6 +101,36 @@ class StorageTest(unittest.TestCase):
         fresh.close()
         other.close()
 
+    def test_bold_underline_marks(self):
+        p = sample_page()
+        p.fmt = {"journal": [[0, 0, 2, "b"], [3, 1, 2, "u"], [9, 0, 1, "b"]],  # 9번 문단은 없음 → 버림
+                 "todo": [[0, 0, 2, "x"], [0, 0, 0, "b"], ["a"]],               # 잘못된 값 → 버림
+                 "schedule": [[2, 0, 5, "u"]]}
+        self.s.save_page(p)
+        got = self.s.get_page(D)
+        self.assertEqual(got.fmt, {"journal": [[0, 0, 2, "b"], [3, 1, 2, "u"]], "schedule": [[2, 0, 5, "u"]]})
+        out = self.dir / "f.json"
+        self.s.export_json(out)
+        other = Storage(self.dir / "f.db")
+        other.import_json(out)
+        self.assertEqual(other.get_page(D).fmt, got.fmt)
+        other.close()
+        self.assertNotIn("fmt", Page(D, todo=["x"]).to_json())  # 서식 없으면 키 없음
+
+    def test_old_db_without_fmt_column(self):
+        import sqlite3
+        path = self.dir / "old.db"
+        db = sqlite3.connect(path)
+        db.execute("CREATE TABLE pages (date TEXT PRIMARY KEY, schedule TEXT NOT NULL DEFAULT '', "
+                   "journal TEXT NOT NULL DEFAULT '[]', todo TEXT NOT NULL DEFAULT '', updated TEXT NOT NULL)")
+        db.execute("INSERT INTO pages VALUES('2026-11-10', '', '[]', '옛 할 일', '2026-11-10T09:00:00')")
+        db.commit()
+        db.close()
+        s = Storage(path)
+        self.assertEqual(s.get_page(D).todo, ["옛 할 일"])
+        self.assertEqual(s.get_page(D).fmt, {})
+        s.close()
+
     def test_import_rejects_other_files(self):
         bad = self.dir / "x.json"
         bad.write_text('{"format": "something"}', encoding="utf-8")

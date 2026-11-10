@@ -99,11 +99,63 @@ class MainWindowTest(unittest.TestCase):
         self.enter()
         self.assertEqual(self.entries(), [("", ""), ("[09:12]", "첫 줄")])
 
-    def test_ctrl_t_restamps(self):
+    def test_ctrl_t_toggles(self):
         self.type_journal("메모")
+        self.assertEqual(self.entries(), [("[09:12]", "메모")])
+        self.win.sheet.stamp_current()          # 있으면 뺀다
+        self.assertEqual(self.entries(), [("", "메모")])
+        self.type_journal(" 추가")              # 뺀 뒤 계속 써도 다시 붙지 않음
+        self.assertEqual(self.entries(), [("", "메모 추가")])
         self.clock.now = dt.datetime(2026, 11, 10, 11, 5)
-        self.win.sheet.stamp_current()
-        self.assertEqual(self.entries(), [("[11:05]", "메모")])
+        self.win.sheet.stamp_current()          # 없으면 지금 시각
+        self.assertEqual(self.entries(), [("[11:05]", "메모 추가")])
+
+    def select(self, edit, start, end):
+        cur = edit.textCursor()
+        cur.setPosition(start)
+        cur.setPosition(end, QTextCursor.KeepAnchor)
+        edit.setTextCursor(cur)
+
+    def test_bold_underline_saved_and_restored(self):
+        sheet = self.win.sheet
+        self.type_journal("굵게 밑줄 보통")
+        self.select(sheet.journal, 0, 2)
+        sheet.journal.toggle_bold()
+        self.select(sheet.journal, 3, 5)
+        sheet.journal.toggle_underline()
+        type_text(sheet.todo, "할 일")
+        self.select(sheet.todo, 0, 3)
+        sheet.todo.toggle_bold()
+        sheet.todo.toggle_underline()
+        self.app.processEvents()
+        self.assertTrue(self.win.dirty)  # 서식만 바꿔도 저장 대상
+        self.win.go_to(D + dt.timedelta(days=1))
+        page = self.storage.get_page(D)
+        self.assertEqual(page.fmt, {"journal": [[0, 0, 2, "b"], [0, 3, 2, "u"]],
+                                    "todo": [[0, 0, 3, "b"], [0, 0, 3, "u"]]})
+        self.win.go_to(D)
+        self.assertEqual(sheet.collect(D).fmt, page.fmt)
+        self.select(sheet.journal, 0, 2)  # 다시 누르면 꺼짐
+        sheet.journal.toggle_bold()
+        self.assertEqual(sheet.collect(D).fmt["journal"], [[0, 3, 2, "u"]])
+
+    def test_font_family_is_global_setting(self):
+        sheet = self.win.sheet
+        sheet.set_font_family("DejaVu Sans")
+        self.assertEqual(sheet.journal.font().families()[0], "DejaVu Sans")
+        self.storage.set_setting("font_family", "DejaVu Sans")
+        from main_window import MainWindow
+        w2 = MainWindow(self.storage, clock=self.clock, start_date=D)
+        self.assertEqual(w2.sheet.font_family, "DejaVu Sans")
+        w2.close()
+
+    def test_menus_list_shortcuts(self):
+        keys = {a.shortcut().toString() for a in self.win.actions() if not a.shortcut().isEmpty()}
+        for k in ("Ctrl+T", "Ctrl+B", "Ctrl+U", "Ctrl+PgUp", "Ctrl+PgDown", "F1"):
+            self.assertIn(k, keys)
+        html = self.win.shortcuts_html()
+        self.assertIn("Ctrl+B", html)
+        self.assertIn("밑줄", html)
 
     def test_save_and_reload_other_day(self):
         sheet = self.win.sheet
@@ -130,8 +182,8 @@ class MainWindowTest(unittest.TestCase):
         sheet = self.win.sheet
         sheet._on_drag("schedule", sheet.lay.line_height)  # 한 줄 아래로 끌기
         sheet._on_drag_end()
-        self.assertEqual(sheet.lay.schedule_lines, 7)
-        self.assertEqual(self.storage.load_layout().schedule_lines, 7)
+        self.assertEqual(sheet.lay.schedule_lines, 5)
+        self.assertEqual(self.storage.load_layout().schedule_lines, 5)
         b = L.section_bounds(sheet.lay, sheet.used_lines())
         self.assertEqual(sheet.journal.y(), b["journal"][0] + sheet.edit_offset)
         # 긴 일지는 구역이 늘어나도 잘리지 않음

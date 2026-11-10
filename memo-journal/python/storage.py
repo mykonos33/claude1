@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS pages (
     schedule TEXT NOT NULL DEFAULT '',   -- 일정 줄들('\\n' 구분)
     journal  TEXT NOT NULL DEFAULT '[]', -- JSON [{"cue": "[09:12]", "text": "..."}]
     todo     TEXT NOT NULL DEFAULT '',   -- 내일 할 일 줄들('\\n' 구분)
-    updated  TEXT NOT NULL               -- '2026-11-10T21:03:11'
+    updated  TEXT NOT NULL,              -- '2026-11-10T21:03:11'
+    fmt      TEXT NOT NULL DEFAULT '{}'  -- 굵게/밑줄 JSON {"journal": [[줄, 시작, 길이, "b"|"u"], ...]}
 );
 CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
@@ -48,6 +49,32 @@ class Entry:
         return not self.cue.strip() and not self.text.strip()
 
 
+STYLES = ("b", "u")  # 굵게, 밑줄
+FMT_SECTIONS = ("schedule", "journal", "todo")
+
+
+def clean_fmt(fmt: object, line_counts: dict[str, int]) -> dict[str, list[list]]:
+    """굵게/밑줄 표시 정리. 위치는 줄(일지는 문단) 번호와 그 줄 안의 글자 위치(유니코드 글자 단위).
+
+    잘못된 값과 없는 줄을 가리키는 표시는 버린다. 표시가 없는 구역은 키를 넣지 않는다.
+    """
+    out: dict[str, list[list]] = {}
+    if not isinstance(fmt, dict):
+        return out
+    for sec in FMT_SECTIONS:
+        marks = []
+        for m in fmt.get(sec) or []:
+            try:
+                line, start, length, style = int(m[0]), int(m[1]), int(m[2]), str(m[3])
+            except (TypeError, ValueError, IndexError):
+                continue
+            if style in STYLES and 0 <= line < line_counts.get(sec, 0) and start >= 0 and length > 0:
+                marks.append([line, start, length, style])
+        if marks:
+            out[sec] = sorted(marks)
+    return out
+
+
 @dataclass
 class Page:
     date: dt.date
@@ -55,6 +82,7 @@ class Page:
     journal: list[Entry] = field(default_factory=list)
     todo: list[str] = field(default_factory=list)
     updated: str = ""
+    fmt: dict[str, list[list]] = field(default_factory=dict)  # 굵게/밑줄(clean_fmt 참고)
 
     def is_empty(self) -> bool:
         return (
@@ -68,13 +96,18 @@ class Page:
 
     # --- JSON 규격 ---
     def to_json(self) -> dict:
-        return {
+        schedule, journal, todo = _trim(self.schedule), _trim_entries(self.journal), _trim(self.todo)
+        d = {
             "date": self.date.isoformat(),
-            "schedule": _trim(self.schedule),
-            "journal": [{"cue": e.cue, "text": e.text} for e in _trim_entries(self.journal)],
-            "todo": _trim(self.todo),
+            "schedule": schedule,
+            "journal": [{"cue": e.cue, "text": e.text} for e in journal],
+            "todo": todo,
             "updated": self.updated,
         }
+        fmt = clean_fmt(self.fmt, {"schedule": len(schedule), "journal": len(journal), "todo": len(todo)})
+        if fmt:
+            d["fmt"] = fmt
+        return d
 
     @classmethod
     def from_json(cls, d: dict) -> "Page":
@@ -84,6 +117,7 @@ class Page:
             journal=[Entry(str(e.get("cue", "")), str(e.get("text", ""))) for e in d.get("journal", [])],
             todo=[str(x) for x in d.get("todo", [])],
             updated=str(d.get("updated", "")),
+            fmt=d.get("fmt") if isinstance(d.get("fmt"), dict) else {},
         )
 
 
@@ -131,6 +165,9 @@ class Storage:
         self.clock = clock
         self.db = sqlite3.connect(str(path))
         self.db.executescript(_SCHEMA)
+        cols = {r[1] for r in self.db.execute("PRAGMA table_info(pages)")}
+        if "fmt" not in cols:  # 굵게/밑줄 이전에 만든 저장 파일
+            self.db.execute("ALTER TABLE pages ADD COLUMN fmt TEXT NOT NULL DEFAULT '{}'")
         self.db.execute(
             "INSERT OR IGNORE INTO settings(key, value) VALUES('schema_version', ?)", (str(SCHEMA_VERSION),)
         )
@@ -142,17 +179,22 @@ class Storage:
     # --- 속지 ---
     def get_page(self, date: dt.date) -> Page:
         row = self.db.execute(
-            "SELECT schedule, journal, todo, updated FROM pages WHERE date = ?", (date.isoformat(),)
+            "SELECT schedule, journal, todo, updated, fmt FROM pages WHERE date = ?", (date.isoformat(),)
         ).fetchone()
         if not row:
             return Page(date)
-        schedule, journal, todo, updated = row
+        schedule, journal, todo, updated, fmt = row
+        try:
+            fmt = json.loads(fmt or "{}")
+        except json.JSONDecodeError:
+            fmt = {}
         return Page(
             date=date,
             schedule=schedule.split("\n") if schedule else [],
             journal=[Entry(e.get("cue", ""), e.get("text", "")) for e in json.loads(journal or "[]")],
             todo=todo.split("\n") if todo else [],
             updated=updated,
+            fmt=fmt if isinstance(fmt, dict) else {},
         )
 
     def save_page(self, page: Page, *, keep_updated: bool = False) -> None:
@@ -165,15 +207,16 @@ class Storage:
             page.updated = self.clock()
         d = page.to_json()
         self.db.execute(
-            "INSERT INTO pages(date, schedule, journal, todo, updated) VALUES(?, ?, ?, ?, ?) "
+            "INSERT INTO pages(date, schedule, journal, todo, updated, fmt) VALUES(?, ?, ?, ?, ?, ?) "
             "ON CONFLICT(date) DO UPDATE SET schedule=excluded.schedule, journal=excluded.journal, "
-            "todo=excluded.todo, updated=excluded.updated",
+            "todo=excluded.todo, updated=excluded.updated, fmt=excluded.fmt",
             (
                 d["date"],
                 "\n".join(d["schedule"]),
                 json.dumps(d["journal"], ensure_ascii=False),
                 "\n".join(d["todo"]),
                 d["updated"],
+                json.dumps(d.get("fmt", {}), ensure_ascii=False),
             ),
         )
         self.db.commit()

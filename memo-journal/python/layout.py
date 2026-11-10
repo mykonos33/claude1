@@ -1,6 +1,6 @@
 """코넬 노트식 속지 배치 계산 (GUI 없음).
 
-    ┌ Date. 2026-11-10 (화) ───────────────────┐
+    ┌─────────────────────────────────────────┐ ← 날짜는 창 위쪽 막대에 표시(속지에는 없음)
     │ 일정 (schedule_lines 줄, 전체 폭)           │
     ├──────────┬──────────────────────────────┤ ← 끌어서 일정 줄 수 조절
     │ 타임스탬프 │ 메인 일지 (journal_lines 줄)     │
@@ -37,18 +37,20 @@ def _clamp(name: str, value: int) -> int:
 
 @dataclass(frozen=True)
 class PageLayout:
-    schedule_lines: int = 6
+    schedule_lines: int = 4
     journal_lines: int = 12
     todo_lines: int = 3
     line_height: int = 28  # px
     cue_width: int = 90  # px
-    header_height: int = 36  # 'Date.' 머리줄 높이(px, 고정)
+    header_height: int = 10  # 속지 맨 위 여백(px, 고정·저장 안 함)
 
     def lines(self, section: str) -> int:
         return getattr(self, f"{section}_lines")
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        d = asdict(self)
+        d.pop("header_height")
+        return d
 
     @classmethod
     def from_dict(cls, data: dict | None) -> "PageLayout":
@@ -57,7 +59,7 @@ class PageLayout:
             return base
         kwargs = {}
         for f in fields(cls):
-            if f.name in data:
+            if f.name in data and f.name != "header_height":
                 try:
                     v = int(data[f.name])
                 except (TypeError, ValueError):
