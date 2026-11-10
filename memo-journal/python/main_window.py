@@ -12,7 +12,7 @@ from __future__ import annotations
 import datetime as dt
 from typing import Callable, Optional
 
-from PySide6.QtCore import QDate, QPoint, Qt, QTimer, Signal
+from PySide6.QtCore import QDate, QEvent, QPoint, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QAction, QColor, QFont, QFontDatabase, QFontMetrics, QKeySequence, QPainter, QPen,
     QTextBlockFormat, QTextCharFormat, QTextCursor, QTextDocumentFragment,
@@ -52,12 +52,14 @@ DEFAULT_FONT = "Malgun Gothic"
 
 SHORTCUTS = [  # (단축키, 설명) — 도움말 창과 메뉴에 같이 쓰임
     ("Ctrl+T", "타임스탬프 넣기 / 다시 누르면 빼기 (지금 문단의 왼쪽 칸)"),
-    ("Ctrl+B", "굵게 켜기/끄기"),
-    ("Ctrl+U", "밑줄 켜기/끄기"),
+    ("Ctrl+B", "굵게 켜기/끄기 (블록을 잡고 누르면 그 글자에 적용)"),
+    ("Ctrl+U", "밑줄 켜기/끄기 (블록을 잡고 누르면 그 글자에 적용)"),
+    ("Insert", "삽입 / 수정(겹쳐 쓰기) 전환"),
     ("Ctrl+PgUp", "전날로"),
     ("Ctrl+PgDown", "다음날로"),
     ("Ctrl+= / Ctrl+-", "크게 / 작게 (Ctrl+마우스 휠도 됨)"),
     ("Ctrl+Z / Ctrl+Y", "되돌리기 / 다시 하기"),
+    ("Ctrl+W / Ctrl+Q", "창 닫기 / 프로그램 종료"),
     ("F1", "이 단축키 목록"),
 ]
 MOUSE_HELP = [
@@ -88,8 +90,13 @@ def make_font(line_height: int, scale: float = 0.5, family: str = DEFAULT_FONT) 
     return f
 
 
+BOLD_MIN = 600  # 이 굵기 이상이면 '굵게'로 본다
+
+
 class RuledEdit(QTextEdit):
     """투명 배경, 줄 높이 고정, 자체 스크롤 없음(높이는 속지가 정해 줌)."""
+
+    insertPressed = Signal()  # Insert 키(삽입/수정 전환은 속지가 세 칸에 함께 적용)
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
@@ -148,7 +155,26 @@ class RuledEdit(QTextEdit):
         if e.key() in (Qt.Key_Return, Qt.Key_Enter) and e.modifiers() & Qt.ShiftModifier:
             self.textCursor().insertBlock()
             return
+        if e.key() == Qt.Key_Insert and e.modifiers() == Qt.NoModifier:
+            self.insertPressed.emit()
+            return
         super().keyPressEvent(e)
+
+    def inputMethodEvent(self, e):
+        """한글 입력기로 확정된 글자도 '수정' 모드에서는 뒤 글자를 덮어쓴다.
+        (Qt 기본 겹쳐 쓰기는 키보드로 바로 들어오는 영문·숫자에만 적용됨)"""
+        commit = e.commitString()
+        over = self.overwriteMode() and bool(commit) and not self.textCursor().hasSelection()
+        super().inputMethodEvent(e)
+        if over:
+            cur = self.textCursor()
+            remaining = cur.block().length() - 1 - cur.positionInBlock()  # 문단 끝은 넘지 않음
+            n = min(len(commit), remaining)
+            if n > 0:
+                cur.joinPreviousEditBlock()
+                cur.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, n)
+                cur.removeSelectedText()
+                cur.endEditBlock()
 
     def lines(self) -> list[str]:
         out, block = [], self.document().begin()
@@ -158,14 +184,42 @@ class RuledEdit(QTextEdit):
         return out
 
     # --- 굵게 / 밑줄 ---
+    def _selection_all(self, pred) -> Optional[bool]:
+        """블록으로 잡은 글자가 모두 pred를 만족하는지. 잡은 글자가 없으면 None."""
+        cur = self.textCursor()
+        if not cur.hasSelection():
+            return None
+        a, b = cur.selectionStart(), cur.selectionEnd()
+        block, found = self.document().findBlock(a), False
+        while block.isValid() and block.position() < b:
+            base = block.position()
+            for r in block.textFormats():
+                if base + r.start + r.length <= a or base + r.start >= b:
+                    continue
+                found = True
+                if not pred(r.format):
+                    return False
+            block = block.next()
+        return True if found else None
+
+    def is_bold(self) -> bool:
+        """잡은 글자가 전부 굵으면 True(워드·한글 방식). 블록이 없으면 지금 입력 상태."""
+        r = self._selection_all(lambda f: f.fontWeight() >= BOLD_MIN)
+        return self.fontWeight() >= BOLD_MIN if r is None else r
+
+    def is_underline(self) -> bool:
+        r = self._selection_all(lambda f: f.fontUnderline())
+        return self.fontUnderline() if r is None else r
+
     def toggle_bold(self) -> None:
+        """하나라도 굵지 않으면 전체 굵게, 전부 굵을 때만 해제."""
         fmt = QTextCharFormat()
-        fmt.setFontWeight(QFont.Normal if self.fontWeight() >= QFont.DemiBold else QFont.Bold)
+        fmt.setFontWeight(QFont.Normal if self.is_bold() else QFont.Bold)
         self.mergeCurrentCharFormat(fmt)
 
     def toggle_underline(self) -> None:
         fmt = QTextCharFormat()
-        fmt.setFontUnderline(not self.fontUnderline())
+        fmt.setFontUnderline(not self.is_underline())
         self.mergeCurrentCharFormat(fmt)
 
     def marks(self) -> list[list]:
@@ -180,7 +234,7 @@ class RuledEdit(QTextEdit):
                 a, b = _u16_to_py(text, r.start), _u16_to_py(text, r.start + r.length)
                 if b <= a:
                     continue
-                for style, on in (("b", f.fontWeight() >= QFont.DemiBold), ("u", f.fontUnderline())):
+                for style, on in (("b", f.fontWeight() >= BOLD_MIN), ("u", f.fontUnderline())):
                     if on:
                         sp = spans[style]
                         if sp and sp[-1][1] == a:  # 바로 이어지는 구간은 합친다
@@ -260,12 +314,15 @@ class Sheet(QWidget):
 
     edited = Signal()                 # 내용이 바뀜(자동 저장용)
     layoutCommitted = Signal(object)  # 끌기/확대가 끝남(설정 저장용)
+    stateChanged = Signal()           # 굵게/밑줄/삽입·수정 표시를 다시 그려야 함
 
     def __init__(self, page_layout: L.PageLayout, clock: Callable[[], dt.datetime] = dt.datetime.now):
         super().__init__()
         self.lay = page_layout
         self.clock = clock
         self.font_family = DEFAULT_FONT
+        self.overwrite = False                         # False=삽입, True=수정(겹쳐 쓰기)
+        self.active_edit: Optional[RuledEdit] = None   # 지금 글을 쓰고 있는 칸
         self.schedule = RuledEdit(self)
         self.journal = RuledEdit(self)
         self.todo = RuledEdit(self)
@@ -292,7 +349,27 @@ class Sheet(QWidget):
             e.textChanged.connect(self._on_any_changed)
             e.document().documentLayout().documentSizeChanged.connect(lambda *_: self.request_relayout())
             e.cursorPositionChanged.connect(self._follow_cursor)
+            e.cursorPositionChanged.connect(self.stateChanged)
+            e.selectionChanged.connect(self.stateChanged)
+            e.currentCharFormatChanged.connect(lambda *_: self.stateChanged.emit())
+            e.insertPressed.connect(self.toggle_overwrite)
+            e.installEventFilter(self)
         self._apply_metrics()
+
+    def eventFilter(self, obj, ev):
+        if ev.type() == QEvent.FocusIn and obj in self.edits.values():
+            self.active_edit = obj
+            self.stateChanged.emit()
+        return super().eventFilter(obj, ev)
+
+    def toggle_overwrite(self) -> None:
+        self.set_overwrite(not self.overwrite)
+
+    def set_overwrite(self, on: bool) -> None:
+        self.overwrite = bool(on)
+        for e in self.edits.values():
+            e.setOverwriteMode(self.overwrite)
+        self.stateChanged.emit()
 
     # ---------- 배치 ----------
     @property
@@ -526,8 +603,10 @@ class Sheet(QWidget):
         self.relayout()
 
     def focused_edit(self) -> Optional[RuledEdit]:
-        focus = QApplication.focusWidget()
-        return focus if isinstance(focus, RuledEdit) and focus in self.edits.values() else None
+        """굵게/밑줄을 적용할 칸. 타임스탬프 칸에 있을 때는 없음."""
+        if isinstance(QApplication.focusWidget(), CueEdit):
+            return None
+        return self.active_edit
 
     # ---------- 불러오기 / 모으기 ----------
     def load(self, page: Page, hint_todo: list[str]) -> None:
@@ -569,6 +648,10 @@ class Sheet(QWidget):
 
 
 class MainWindow(QMainWindow):
+    saved = Signal()            # 저장 내용이 바뀜(위젯이 다시 읽도록)
+    fontChanged = Signal(str)   # 프로그램 글꼴이 바뀜
+    quitRequested = Signal()    # 프로그램 종료(창만 닫는 것과 구분)
+
     def __init__(self, storage: Storage, clock: Callable[[], dt.datetime] = dt.datetime.now,
                  start_date: Optional[dt.date] = None):
         super().__init__()
@@ -582,6 +665,7 @@ class MainWindow(QMainWindow):
         self.sheet = Sheet(storage.load_layout(), clock)
         self.sheet.set_font_family(storage.get_setting("font_family", DEFAULT_FONT))
         self.sheet.edited.connect(self._mark_dirty)
+        self.sheet.stateChanged.connect(self._update_indicators)
         self.sheet.layoutCommitted.connect(storage.save_layout)
 
         self.scroll = QScrollArea()
@@ -612,7 +696,14 @@ class MainWindow(QMainWindow):
         bar.setStyleSheet("QWidget { background: #2b2d31; color: #f2f2f2; }"
                           "QToolButton, QPushButton { border: none; padding: 6px 12px; font-size: 18px; }"
                           "QPushButton#date { font-size: 21px; font-weight: bold; }"
-                          "QToolButton:hover, QPushButton:hover { background: #3a3d43; border-radius: 6px; }")
+                          "QToolButton:hover, QPushButton:hover { background: #3a3d43; border-radius: 6px; }"
+                          # 굵게/밑줄/삽입·수정 표시: 켜진 것은 눌린 모양(파란 테두리)
+                          "QToolButton#ind { font-size: 16px; padding: 3px 9px; border: 1px solid transparent;"
+                          " border-radius: 5px; min-width: 20px; }"
+                          "QToolButton#ind:checked { background: #3d4f73; border: 1px solid #7fa8ff; }"
+                          "QToolButton#mode { font-size: 14px; padding: 4px 10px; border: 1px solid #55585f;"
+                          " border-radius: 5px; }"
+                          "QToolButton#mode:checked { background: #6b4a2b; border: 1px solid #f0a860; }")
         h = QHBoxLayout(bar)
         h.setContentsMargins(10, 6, 10, 6)
         prev_btn = QToolButton(text="◀")
@@ -628,11 +719,34 @@ class MainWindow(QMainWindow):
         today_btn.clicked.connect(self.today)
         self.status = QLabel()
         self.status.setStyleSheet("color: #9a9da3; font-size: 13px;")
+        # 상태 표시(눌러서 켜고 끌 수도 있음). 눌러도 글 쓰던 칸의 커서가 그대로 있도록 포커스는 받지 않는다.
+        self.bold_btn = QToolButton(text="가", objectName="ind", checkable=True)
+        f = self.bold_btn.font(); f.setBold(True); self.bold_btn.setFont(f)
+        self.bold_btn.setToolTip("굵게 (Ctrl+B)")
+        self.bold_btn.clicked.connect(self._bold)
+        self.underline_btn = QToolButton(text="가", objectName="ind", checkable=True)
+        f = self.underline_btn.font(); f.setUnderline(True); self.underline_btn.setFont(f)
+        self.underline_btn.setToolTip("밑줄 (Ctrl+U)")
+        self.underline_btn.clicked.connect(self._underline)
+        self.mode_btn = QToolButton(text="삽입", objectName="mode", checkable=True)
+        self.mode_btn.setToolTip("삽입 / 수정(겹쳐 쓰기) 전환 (Insert)")
+        self.mode_btn.clicked.connect(self.sheet.toggle_overwrite)
         for w in (prev_btn, self.date_btn, next_btn, today_btn):
             h.addWidget(w)
         h.addStretch(1)
         h.addWidget(self.status)
+        h.addSpacing(8)
+        for w in (self.bold_btn, self.underline_btn, self.mode_btn):
+            w.setFocusPolicy(Qt.NoFocus)
+            h.addWidget(w)
         return bar
+
+    def _update_indicators(self) -> None:
+        e = self.sheet.focused_edit()
+        self.bold_btn.setChecked(bool(e and e.is_bold()))
+        self.underline_btn.setChecked(bool(e and e.is_underline()))
+        self.mode_btn.setChecked(self.sheet.overwrite)
+        self.mode_btn.setText("수정" if self.sheet.overwrite else "삽입")
 
     def _add_actions(self, menu: QMenu, items) -> None:
         """items: (글, 실행할 함수, 단축키 목록) 또는 None(구분선). 단축키는 메뉴 오른쪽에 표시됨."""
@@ -655,13 +769,15 @@ class MainWindow(QMainWindow):
             ("JSON 백업 가져오기(합치기)…", self._import_json, []),
             ("TXT로 내보내기…", self._export_text, []),
             None,
-            ("종료", self.close, []),
+            ("창 닫기 (위젯은 계속 떠 있음)", self.close, ["Ctrl+W"]),
+            ("프로그램 종료", self.quitRequested.emit, ["Ctrl+Q"]),
         ])
         self._add_actions(mb.addMenu("편집"), [
             ("타임스탬프 넣기/빼기", self.sheet.stamp_current, ["Ctrl+T"]),
             None,
             ("굵게", self._bold, ["Ctrl+B"]),
             ("밑줄", self._underline, ["Ctrl+U"]),
+            ("삽입/수정 전환 (Insert)", self.sheet.toggle_overwrite, []),
         ])
         self._add_actions(mb.addMenu("이동"), [
             ("전날", self.prev_day, ["Ctrl+PgUp"]),
@@ -698,11 +814,13 @@ class MainWindow(QMainWindow):
         e = self.sheet.focused_edit()
         if e:
             e.toggle_bold()
+        self._update_indicators()
 
     def _underline(self) -> None:
         e = self.sheet.focused_edit()
         if e:
             e.toggle_underline()
+        self._update_indicators()
 
     def prev_day(self) -> None:
         self.go_to(self.date - dt.timedelta(days=1))
@@ -734,6 +852,7 @@ class MainWindow(QMainWindow):
         v.addWidget(buttons)
         if dlg.exec() == QDialog.Accepted:
             self.storage.set_setting("font_family", self.sheet.font_family)
+            self.fontChanged.emit(self.sheet.font_family)
         else:
             self.sheet.set_font_family(before)
 
@@ -782,6 +901,7 @@ class MainWindow(QMainWindow):
         self.storage.save_page(self.sheet.collect(self.date))
         self.dirty = False
         self.status.setText(f"저장됨 {self.clock():%H:%M:%S}")
+        self.saved.emit()
 
     def go_to(self, date: dt.date) -> None:
         if date == self.date:
@@ -789,6 +909,16 @@ class MainWindow(QMainWindow):
         self.save()
         self.date = date
         self._load()
+
+    def open_date(self, date: dt.date) -> None:
+        """위젯/트레이에서 부를 때: 그 날짜 속지를 열고 창을 앞으로."""
+        self.go_to(date)
+        if self.isMinimized():
+            self.showNormal()
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self.sheet.journal.setFocus()
 
     def closeEvent(self, e):
         self.save()
@@ -814,6 +944,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "가져오기 실패", str(ex))
             return
         self._load()
+        self.saved.emit()
         QMessageBox.information(self, "가져오기",
                                 f"새로 추가 {r.added}일, 더 최신이라 바꿈 {r.updated}일, 이쪽이 최신이라 둠 {r.skipped}일")
 

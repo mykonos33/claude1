@@ -139,6 +139,78 @@ class MainWindowTest(unittest.TestCase):
         sheet.journal.toggle_bold()
         self.assertEqual(sheet.collect(D).fmt["journal"], [[0, 3, 2, "u"]])
 
+    def test_mixed_selection_bolds_everything_first(self):
+        """워드·한글 방식: 하나라도 안 굵으면 전체 굵게, 전부 굵을 때만 해제."""
+        j = self.win.sheet.journal
+        self.type_journal("굵게보통")
+        self.select(j, 0, 2)
+        j.toggle_bold()
+        self.select(j, 0, 4)           # 굵은 글자 + 보통 글자 섞어서 잡기
+        self.assertFalse(j.is_bold())
+        j.toggle_bold()
+        self.assertEqual(j.marks(), [[0, 0, 4, "b"]])
+        self.assertTrue(j.is_bold())
+        j.toggle_bold()
+        self.assertEqual(j.marks(), [])
+        self.select(j, 2, 0)           # 뒤에서 앞으로 잡아도 같음
+        j.toggle_underline()
+        self.select(j, 0, 4)
+        j.toggle_underline()
+        self.assertEqual(j.marks(), [[0, 0, 4, "u"]])
+
+    def test_indicators_follow_cursor(self):
+        sheet, win = self.win.sheet, self.win
+        j = sheet.journal
+        self.type_journal("굵게보통")
+        sheet.active_edit = j
+        self.select(j, 0, 2)
+        win._bold()                    # 표시 버튼/단축키와 같은 경로
+        self.assertTrue(win.bold_btn.isChecked())
+        self.assertFalse(win.underline_btn.isChecked())
+        self.select(j, 2, 4)
+        self.app.processEvents()
+        self.assertFalse(win.bold_btn.isChecked())
+        self.select(j, 1, 1)           # 굵은 글자 사이에 커서만
+        self.app.processEvents()
+        self.assertTrue(win.bold_btn.isChecked())
+        win._underline()               # 블록 없이 켜면 다음 글자부터
+        self.assertTrue(win.underline_btn.isChecked())
+        self.type_journal("새")
+        self.assertIn([0, 1, 1, "u"], j.marks())
+
+    def test_insert_key_toggles_overwrite(self):
+        from PySide6.QtGui import QInputMethodEvent
+
+        sheet, win = self.win.sheet, self.win
+        j = sheet.journal
+        self.type_journal("abcdef")
+        self.assertEqual(win.mode_btn.text(), "삽입")
+        QTest.keyClick(j, Qt.Key_Insert)
+        self.assertTrue(sheet.overwrite)
+        self.assertTrue(sheet.todo.overwriteMode())       # 세 칸 모두 같이 바뀜
+        self.assertEqual(win.mode_btn.text(), "수정")
+        self.assertTrue(win.mode_btn.isChecked())
+        self.select(j, 1, 1)
+        self.type_journal("XY")                            # 키보드 글자: 덮어쓰기
+        self.assertEqual(j.toPlainText(), "aXYdef")
+        ime = QInputMethodEvent()
+        ime.setCommitString("한")                           # 한글 입력기로 확정된 글자도 덮어쓰기
+        QApplication.sendEvent(j, ime)
+        self.assertEqual(j.toPlainText(), "aXY한ef")
+        self.select(j, 6, 6)
+        ime = QInputMethodEvent()
+        ime.setCommitString("끝")                           # 문단 끝에서는 그냥 덧붙음
+        QApplication.sendEvent(j, ime)
+        self.assertEqual(j.toPlainText(), "aXY한ef끝")
+        QTest.keyClick(j, Qt.Key_Insert)
+        self.assertFalse(sheet.overwrite)
+        self.assertEqual(win.mode_btn.text(), "삽입")
+        self.select(j, 0, 0)
+        ime = QInputMethodEvent()
+        ime.setCommitString("가")
+        QApplication.sendEvent(j, ime)
+        self.assertEqual(j.toPlainText(), "가aXY한ef끝")
+
     def test_font_family_is_global_setting(self):
         sheet = self.win.sheet
         sheet.set_font_family("DejaVu Sans")
