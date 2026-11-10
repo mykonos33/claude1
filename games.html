@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>오목눈이 게임 모음</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{ --berry:#B9406B; --ink:#4A3833; --ink-soft:#8A7670; --line:#F3D9E2; --f:"Jua","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; --fb:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; }
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 22px 22px,rgba(247,168,192,.22) 5px,transparent 6px) 0 0/52px 52px,#FFF2F0;color:var(--ink);font-family:var(--fb);-webkit-tap-highlight-color:transparent}
+main{max-width:1100px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+h1{margin:0 0 6px;font-family:var(--f);font-weight:400;font-size:clamp(34px,6vw,56px);color:var(--berry);text-align:center}
+.lead{margin:0 0 24px;text-align:center;font-size:18px;color:var(--ink-soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+a.g{display:flex;gap:14px;align-items:center;background:#fff;border-radius:28px;padding:16px 18px;text-decoration:none;color:inherit;box-shadow:0 7px 0 var(--line);min-height:150px}
+a.g:active{transform:translateY(4px);box-shadow:0 3px 0 var(--line)}
+a.g img{width:96px;height:110px;object-fit:contain;flex:none}
+a.g b{display:block;font-family:var(--f);font-weight:400;font-size:25px;color:var(--berry);line-height:1.15}
+a.g span{display:block;font-size:15px;line-height:1.5;color:var(--ink-soft);margin-top:4px}
+a.g i{display:inline-block;font-style:normal;font-family:var(--f);font-size:15px;border-radius:99px;padding:2px 12px;margin-bottom:6px;color:#fff;background:#E2719A}
+a.g i.s{background:#7DBBFF} a.g i.t{background:#F5B83D} a.g.big{grid-column:1/-1;background:linear-gradient(120deg,#DFF1FF,#FFE9F2)}
+</style>
+</head>
+<body>
+<main>
+  <h1>오목눈이 게임 모음</h1>
+  <p class="lead">유민이와 소민이의 게임방</p>
+  <div class="grid">
+    <a class="g big" href="sky.html"><img src="assets/birds/bow_pink.webp" alt=""><div><i class="t">유민 · 소민 · 같이</i><b>오목눈이 하늘 대모험 (3D)</b><span>아이스크림 섬 위를 날아다니는 3D 비행 게임. 유민이는 배달 모험, 소민이는 톡톡 하늘 산책.</span></div></a>
+    <a class="g" href="somin.html"><img src="assets/girls/somin.webp" alt=""><div><i class="s">소민</i><b>톡톡 놀이방</b><span>짹짹 들판, 냠냠 아이스크림, 까꿍, 풍선. 누르기만 하면 돼요.</span></div></a>
+    <a class="g" href="party.html"><img src="assets/birds/nest_r.webp" alt=""><div><i class="t">둘이 한 팀</i><b>생일 파티 준비</b><span>유민이는 케이크, 소민이는 풍선. 점수를 합쳐 별 3개!</span></div></a>
+    <a class="g" href="index.html"><img src="assets/girls/yumin.webp" alt=""><div><i>유민</i><b>아이스크림 대결</b><span>주문 받기와 철판 롤로 사장님 대결.</span></div></a>
+    <a class="g" href="festival.html"><img src="assets/birds/fest_c.webp" alt=""><div><i>유민</i><b>축제 보드게임</b><span>주사위를 굴려 축제 거리에서 손님 모으기.</span></div></a>
+  </div>
+</main>
+</body>
+</html>
