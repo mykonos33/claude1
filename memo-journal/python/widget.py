@@ -47,12 +47,13 @@ C = {
 }
 
 
-def make_app_icon() -> QIcon:
+def make_app_icon(size: int = 64) -> QIcon:
     """트레이/창 아이콘(그림 파일 없이 직접 그림)."""
-    pm = QPixmap(64, 64)
+    pm = QPixmap(size, size)
     pm.fill(Qt.transparent)
     p = QPainter(pm)
     p.setRenderHint(QPainter.Antialiasing)
+    p.scale(size / 64, size / 64)  # 아래 좌표는 64x64 기준
     p.setPen(Qt.NoPen)
     p.setBrush(QColor("#2b2d31"))
     p.drawRoundedRect(2, 2, 60, 60, 14, 14)

@@ -19,6 +19,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
+import autostart
 from main_window import MainWindow
 from storage import Storage, default_db_path
 from widget import CalendarWidget, make_app_icon
@@ -127,6 +128,14 @@ def main(argv: list[str] | None = None) -> int:
         ctl.open_today()
 
     server.newConnection.connect(on_other_instance)
+    # 자동 실행을 켠 뒤 exe나 폴더를 옮겼으면 등록된 경로를 지금 위치로 고쳐 둔다
+    if autostart.is_supported():
+        try:
+            want = ctl.win.autostart_command()
+            if autostart.is_enabled() and autostart.registered_command() != want:
+                autostart.set_enabled(True, want)
+        except OSError:
+            pass
     if not args.widget_only:
         ctl.open_today()
     code = app.exec()

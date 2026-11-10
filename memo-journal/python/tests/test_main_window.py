@@ -211,6 +211,76 @@ class MainWindowTest(unittest.TestCase):
         QApplication.sendEvent(j, ime)
         self.assertEqual(j.toPlainText(), "가aXY한ef끝")
 
+    def test_export_dialog_ranges(self):
+        from export_dialog import ExportDialog
+        from storage import Page
+
+        for day in (1, 10, 20):
+            self.storage.save_page(Page(dt.date(2026, 11, day), todo=["x"]))
+        self.storage.save_page(Page(dt.date(2026, 12, 5), todo=["y"]))
+        dlg = ExportDialog(self.storage, D)
+        self.assertEqual((dlg.date_range(), dlg.count(), dlg.file_format()), ((None, None), 4, "json"))
+        self.assertIn("전체", dlg.default_name(self.clock()))
+        dlg.month_radio.setChecked(True)
+        self.assertEqual(dlg.date_range(), (dt.date(2026, 11, 1), dt.date(2026, 11, 30)))
+        self.assertEqual(dlg.count(), 3)
+        self.assertIn("3일치", dlg.count_label.text())
+        from PySide6.QtCore import QDate
+        dlg.start_edit.setDate(QDate(2026, 12, 31))        # 날짜를 건드리면 '기간 지정'으로, 거꾸로 넣어도 됨
+        dlg.end_edit.setDate(QDate(2026, 11, 15))
+        self.assertTrue(dlg.custom_radio.isChecked())
+        self.assertEqual(dlg.date_range(), (dt.date(2026, 11, 15), dt.date(2026, 12, 31)))
+        self.assertEqual(dlg.count(), 2)
+        dlg.text_radio.setChecked(True)
+        self.assertTrue(dlg.default_name(self.clock()).endswith(".txt"))
+        dlg.start_edit.setDate(QDate(2030, 1, 1))
+        dlg.end_edit.setDate(QDate(2030, 1, 2))
+        from PySide6.QtWidgets import QDialogButtonBox
+        self.assertFalse(dlg.buttons.button(QDialogButtonBox.Ok).isEnabled())  # 내용 없으면 못 누름
+
+    def test_export_then_import_on_other_pc(self):
+        from main_window import MainWindow
+        from storage import Storage
+        import layout as L
+
+        sheet = self.win.sheet
+        self.type_journal("옮길 내용")
+        self.select(sheet.journal, 0, 2)
+        sheet.journal.toggle_bold()
+        type_text(sheet.todo, "할 일")
+        sheet.set_layout(L.PageLayout(schedule_lines=7))
+        self.storage.save_layout(sheet.lay)
+        out = str(Path(self.tmp.name) / "move.json")
+        self.assertEqual(self.win.do_export(out, "json", None, None), 1)   # 저장 안 된 입력도 포함됨
+        txt = str(Path(self.tmp.name) / "move.txt")
+        self.win.do_export(txt, "txt", D, D)
+        self.assertIn("옮길 내용", Path(txt).read_text(encoding="utf-8"))
+
+        other = Storage(Path(self.tmp.name) / "pc2" / "j.db")
+        w2 = MainWindow(other, clock=self.clock, start_date=D)
+        type_text(w2.sheet.todo, "이 PC의 옛 내용")
+        w2.save()
+        other.db.execute("UPDATE pages SET updated='2026-01-01T00:00:00'")
+        other.db.commit()
+        got = []
+        w2.saved.connect(lambda: got.append(1))
+        result, backup = w2.do_import(out, take_settings=True)
+        self.assertEqual((result.added, result.updated, result.skipped), (0, 1, 0))
+        self.assertTrue(backup.exists())                                    # 덮어쓰기 전 자동 백업
+        self.assertIn("이 PC의 옛 내용", backup.read_text(encoding="utf-8"))
+        self.assertEqual([(e.cue, e.text) for e in w2.sheet.collect(D).journal], [("[09:12]", "옮길 내용")])
+        self.assertEqual(w2.sheet.collect(D).fmt, {"journal": [[0, 0, 2, "b"]]})
+        self.assertEqual(w2.sheet.lay.schedule_lines, 7)                    # 속지 배치도 같이
+        self.assertTrue(got)                                                # 위젯에 알림
+        bad = Path(self.tmp.name) / "bad.json"
+        bad.write_text("{}", encoding="utf-8")
+        n = len(list(backup.parent.iterdir()))
+        with self.assertRaises(ValueError):
+            w2.do_import(str(bad), False)
+        self.assertEqual(len(list(backup.parent.iterdir())), n)             # 잘못된 파일이면 백업도 안 만듦
+        w2.close()
+        other.close()
+
     def test_font_family_is_global_setting(self):
         sheet = self.win.sheet
         sheet.set_font_family("DejaVu Sans")

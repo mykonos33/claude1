@@ -256,6 +256,17 @@ class Storage:
         ).fetchone()
         return row[0].split("\n") if row else []
 
+    def page_count(self, start: Optional[dt.date] = None, end: Optional[dt.date] = None) -> int:
+        """기간 안에 내용이 있는 날 수(내보내기 창에서 미리 보여 줌)."""
+        lo = start.isoformat() if start else "0000-00-00"
+        hi = end.isoformat() if end else "9999-99-99"
+        return self.db.execute("SELECT COUNT(*) FROM pages WHERE date BETWEEN ? AND ?", (lo, hi)).fetchone()[0]
+
+    def date_range(self) -> Optional[tuple[dt.date, dt.date]]:
+        """내용이 있는 가장 이른 날과 가장 늦은 날. 아무것도 없으면 None."""
+        lo, hi = self.db.execute("SELECT MIN(date), MAX(date) FROM pages").fetchone()
+        return (dt.date.fromisoformat(lo), dt.date.fromisoformat(hi)) if lo else None
+
     def all_pages(self, start: Optional[dt.date] = None, end: Optional[dt.date] = None) -> list[Page]:
         rows = self.db.execute("SELECT date FROM pages ORDER BY date").fetchall()
         pages = []
@@ -296,15 +307,20 @@ class Storage:
             "version": FORMAT_VERSION,
             "exported": self.clock(),
             "layout": self.load_layout().to_dict(),
+            "font_family": self.get_setting("font_family", ""),
             "pages": [p.to_json() for p in pages],
         }
         Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
         return len(pages)
 
-    def import_json(self, path: str | Path, *, take_layout: bool = False) -> ImportResult:
-        """다른 PC에서 내보낸 JSON 합치기. 같은 날짜면 updated가 더 최신인 쪽을 남긴다."""
+    def import_json(self, path: str | Path, *, take_settings: bool = False, dry_run: bool = False) -> ImportResult:
+        """다른 PC에서 내보낸 JSON 합치기. 같은 날짜면 updated가 더 최신인 쪽을 남긴다.
+
+        dry_run=True면 아무것도 바꾸지 않고 결과 숫자만 돌려준다(가져오기 전 확인용).
+        take_settings=True면 속지 배치와 글꼴 설정도 가져온다.
+        """
         data = json.loads(Path(path).read_text(encoding="utf-8"))
-        if data.get("format") != FORMAT_NAME:
+        if not isinstance(data, dict) or data.get("format") != FORMAT_NAME:
             raise ValueError("메모+일지 내보내기 파일이 아닙니다")
         if int(data.get("version", 0)) > FORMAT_VERSION:
             raise ValueError("더 새 버전 앱에서 만든 파일입니다. 앱을 업데이트해 주세요")
@@ -321,10 +337,35 @@ class Storage:
             else:
                 result.skipped += 1
                 continue
-            self.save_page(incoming, keep_updated=True)
-        if take_layout and data.get("layout"):
-            self.save_layout(PageLayout.from_dict(data["layout"]))
+            if not dry_run:
+                self.save_page(incoming, keep_updated=True)
+        if take_settings and not dry_run:
+            if data.get("layout"):
+                self.save_layout(PageLayout.from_dict(data["layout"]))
+            if data.get("font_family"):
+                self.set_setting("font_family", str(data["font_family"]))
         return result
+
+    def backup(self, keep: int = 10) -> Optional[Path]:
+        """가져오기처럼 내용을 덮어쓸 수 있는 작업 전에 자동으로 남기는 전체 백업.
+
+        저장 파일 옆 backups 폴더에 JSON으로 쓰고, 최근 keep개만 남긴다. 내용이 없으면 만들지 않는다.
+        """
+        if self.page_count() == 0 or str(self.path) == ":memory:":
+            return None
+        folder = self.path.parent / "backups"
+        folder.mkdir(parents=True, exist_ok=True)
+        stamp = self.clock().replace(":", "").replace("-", "")
+        path = folder / f"자동백업_{stamp}.json"
+        n = 1
+        while path.exists():  # 같은 초에 두 번 만들어도 덮어쓰지 않음
+            n += 1
+            path = folder / f"자동백업_{stamp}_{n}.json"
+        self.export_json(path)
+        old = sorted(folder.glob("자동백업_*.json"), key=lambda f: f.stat().st_mtime)
+        for f in old[:-keep]:
+            f.unlink()
+        return path
 
     def export_text(self, path: str | Path, start: Optional[dt.date] = None, end: Optional[dt.date] = None) -> int:
         pages = self.all_pages(start, end)

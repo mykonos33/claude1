@@ -131,9 +131,66 @@ class StorageTest(unittest.TestCase):
         self.assertEqual(s.get_page(D).fmt, {})
         s.close()
 
+    def test_range_count_and_period_export(self):
+        for day in (1, 10, 20):
+            self.s.save_page(Page(dt.date(2026, 11, day), todo=[f"{day}일"]))
+        self.s.save_page(Page(dt.date(2026, 12, 5), todo=["12월"]))
+        self.assertEqual(self.s.page_count(), 4)
+        self.assertEqual(self.s.page_count(dt.date(2026, 11, 1), dt.date(2026, 11, 30)), 3)
+        self.assertEqual(self.s.page_count(dt.date(2026, 11, 10), dt.date(2026, 11, 10)), 1)
+        self.assertEqual(self.s.date_range(), (dt.date(2026, 11, 1), dt.date(2026, 12, 5)))
+        out = self.dir / "nov.json"
+        self.assertEqual(self.s.export_json(out, dt.date(2026, 11, 5), dt.date(2026, 11, 30)), 2)
+        dates = [p["date"] for p in json.loads(out.read_text(encoding="utf-8"))["pages"]]
+        self.assertEqual(dates, ["2026-11-10", "2026-11-20"])
+        txt = self.dir / "nov.txt"
+        self.assertEqual(self.s.export_text(txt, dt.date(2026, 12, 1), None), 1)
+        self.assertIn("2026-12-05", txt.read_text(encoding="utf-8"))
+        empty = Storage(self.dir / "e.db")
+        self.assertIsNone(empty.date_range())
+        self.assertIsNone(empty.backup())          # 내용 없으면 백업 안 만듦
+        empty.close()
+
+    def test_dry_run_and_settings_import(self):
+        self.s.save_page(sample_page())
+        self.s.save_layout(PageLayout(schedule_lines=7, line_height=34))
+        self.s.set_setting("font_family", "바탕")
+        out = self.dir / "all.json"
+        self.s.export_json(out)
+        other = Storage(self.dir / "o.db")
+        r = other.import_json(out, dry_run=True, take_settings=True)
+        self.assertEqual((r.added, r.updated, r.skipped), (1, 0, 0))
+        self.assertEqual(other.page_count(), 0)                    # 미리보기는 아무것도 안 바꿈
+        self.assertEqual(other.load_layout(), PageLayout())
+        other.import_json(out)                                     # 설정 빼고
+        self.assertEqual(other.load_layout(), PageLayout())
+        self.assertIsNone(other.get_setting("font_family"))
+        other.import_json(out, take_settings=True)
+        self.assertEqual(other.load_layout().schedule_lines, 7)
+        self.assertEqual(other.get_setting("font_family"), "바탕")
+        other.close()
+
+    def test_auto_backup_keeps_recent(self):
+        self.s.save_page(sample_page())
+        made = []
+        for i in range(4):
+            self.clock.t = f"2026-11-10T09:00:0{i}"
+            made.append(self.s.backup(keep=3))
+        again = self.s.backup(keep=3)                              # 같은 초에 또: 덮어쓰지 않음
+        self.assertNotEqual(again, made[-1])
+        files = sorted(f.name for f in (self.dir / "a" / "backups").iterdir())
+        self.assertEqual(len(files), 3)
+        self.assertIn(again.name, files)
+        restored = Storage(self.dir / "r.db")
+        self.assertEqual(restored.import_json(again).added, 1)     # 백업 파일은 그대로 가져오기 가능
+        restored.close()
+
     def test_import_rejects_other_files(self):
         bad = self.dir / "x.json"
         bad.write_text('{"format": "something"}', encoding="utf-8")
+        with self.assertRaises(ValueError):
+            self.s.import_json(bad)
+        bad.write_text('[1, 2]', encoding="utf-8")
         with self.assertRaises(ValueError):
             self.s.import_json(bad)
 

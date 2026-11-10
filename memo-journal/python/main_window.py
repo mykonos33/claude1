@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from pathlib import Path
 from typing import Callable, Optional
 
 from PySide6.QtCore import QDate, QEvent, QPoint, Qt, QTimer, Signal
@@ -18,14 +19,16 @@ from PySide6.QtGui import (
     QTextBlockFormat, QTextCharFormat, QTextCursor, QTextDocumentFragment,
 )
 from PySide6.QtWidgets import (
-    QApplication, QCalendarWidget, QDialog, QDialogButtonBox, QFileDialog, QFontComboBox, QFrame,
+    QApplication, QCalendarWidget, QCheckBox, QDialog, QDialogButtonBox, QFileDialog, QFontComboBox, QFrame,
     QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QScrollArea,
     QTextEdit, QToolButton, QVBoxLayout, QWidget, QWidgetAction,
 )
 
+import autostart
 import layout as L
 from calendar_core import date_label
-from storage import Entry, Page, Storage
+from export_dialog import ExportDialog
+from storage import Entry, ImportResult, Page, Storage, default_db_path
 from timestamp import format_stamp, needs_stamp
 
 COLORS = {
@@ -59,6 +62,7 @@ SHORTCUTS = [  # (단축키, 설명) — 도움말 창과 메뉴에 같이 쓰�
     ("Ctrl+PgDown", "다음날로"),
     ("Ctrl+= / Ctrl+-", "크게 / 작게 (Ctrl+마우스 휠도 됨)"),
     ("Ctrl+Z / Ctrl+Y", "되돌리기 / 다시 하기"),
+    ("Ctrl+E", "내보내기 (기간·형식 선택)"),
     ("Ctrl+W / Ctrl+Q", "창 닫기 / 프로그램 종료"),
     ("F1", "이 단축키 목록"),
 ]
@@ -764,11 +768,21 @@ class MainWindow(QMainWindow):
 
     def _build_menu(self) -> None:
         mb = self.menuBar()
-        self._add_actions(mb.addMenu("파일"), [
-            ("JSON으로 백업 내보내기…", self._export_json, []),
-            ("JSON 백업 가져오기(합치기)…", self._import_json, []),
-            ("TXT로 내보내기…", self._export_text, []),
+        file_menu = mb.addMenu("파일")
+        self._add_actions(file_menu, [
+            ("내보내기… (JSON 백업 / TXT)", self._export, ["Ctrl+E"]),
+            ("JSON 백업 가져오기(합치기)…", self._import, []),
             None,
+        ])
+        self.autostart_action: Optional[QAction] = None
+        if autostart.is_supported():  # 윈도우에서만 보임
+            act = QAction("윈도우 시작 시 자동 실행 (위젯만)", self, checkable=True)
+            act.setChecked(autostart.is_enabled())
+            act.toggled.connect(self._set_autostart)
+            file_menu.addAction(act)
+            file_menu.addSeparator()
+            self.autostart_action = act
+        self._add_actions(file_menu, [
             ("창 닫기 (위젯은 계속 떠 있음)", self.close, ["Ctrl+W"]),
             ("프로그램 종료", self.quitRequested.emit, ["Ctrl+Q"]),
         ])
@@ -795,6 +809,21 @@ class MainWindow(QMainWindow):
         self._add_actions(mb.addMenu("도움말"), [
             ("단축키 목록", self.show_shortcuts, ["F1"]),
         ])
+
+    def autostart_command(self) -> str:
+        """시작 프로그램에 등록할 명령(기본 저장 위치가 아니면 --db도 붙임)."""
+        custom = self.storage.path != default_db_path()
+        return autostart.launch_command(str(self.storage.path) if custom else None)
+
+    def _set_autostart(self, on: bool) -> None:
+        try:
+            autostart.set_enabled(on, self.autostart_command())
+        except OSError as ex:
+            QMessageBox.warning(self, "자동 실행", f"설정을 바꾸지 못했습니다.\n{ex}")
+            if self.autostart_action is not None:
+                self.autostart_action.blockSignals(True)
+                self.autostart_action.setChecked(not on)
+                self.autostart_action.blockSignals(False)
 
     def shortcuts_html(self) -> str:
         def rows(title, items):
@@ -925,32 +954,72 @@ class MainWindow(QMainWindow):
         self.storage.save_layout(self.sheet.lay)
         super().closeEvent(e)
 
-    # ---------- 내보내기 ----------
-    def _export_json(self) -> None:
+    # ---------- 내보내기 / 가져오기 ----------
+    def do_export(self, path: str, fmt: str, start: Optional[dt.date], end: Optional[dt.date]) -> int:
+        """창 없이 실제로 내보내는 부분. 내보낸 날 수를 돌려준다."""
         self.save()
-        path, _ = QFileDialog.getSaveFileName(self, "JSON 백업", f"메모일지_{self.clock():%Y%m%d}.json", "JSON (*.json)")
-        if path:
-            n = self.storage.export_json(path)
-            QMessageBox.information(self, "내보내기", f"{n}일치를 저장했습니다.\n{path}")
+        if fmt == "txt":
+            return self.storage.export_text(path, start, end)
+        return self.storage.export_json(path, start, end)
 
-    def _import_json(self) -> None:
+    def do_import(self, path: str, take_settings: bool) -> tuple[ImportResult, Optional[Path]]:
+        """창 없이 실제로 가져오는 부분. 덮어쓰기 전에 지금 내용을 자동 백업한다."""
+        self.save()
+        self.storage.import_json(path, dry_run=True)  # 파일이 이상하면 백업 만들기 전에 여기서 멈춤
+        backup = self.storage.backup()
+        result = self.storage.import_json(path, take_settings=take_settings)
+        if take_settings:
+            self.sheet.set_layout(self.storage.load_layout())
+            self.sheet.set_font_family(self.storage.get_setting("font_family", DEFAULT_FONT))
+            self.fontChanged.emit(self.sheet.font_family)
+        self._load()
+        self.saved.emit()
+        return result, backup
+
+    def _export(self) -> None:
+        self.save()
+        dlg = ExportDialog(self.storage, self.date, self)
+        if dlg.exec() != QDialog.Accepted:
+            return
+        fmt = dlg.file_format()
+        start, end = dlg.date_range()
+        filt = "텍스트 (*.txt)" if fmt == "txt" else "JSON (*.json)"
+        path, _ = QFileDialog.getSaveFileName(self, "내보내기", dlg.default_name(self.clock()), filt)
+        if not path:
+            return
+        try:
+            n = self.do_export(path, fmt, start, end)
+        except OSError as ex:
+            QMessageBox.warning(self, "내보내기 실패", f"파일을 쓸 수 없습니다.\n{ex}")
+            return
+        QMessageBox.information(self, "내보내기", f"{n}일치를 저장했습니다.\n{path}")
+
+    def _import(self) -> None:
         self.save()
         path, _ = QFileDialog.getOpenFileName(self, "JSON 백업 가져오기", "", "JSON (*.json)")
         if not path:
             return
         try:
-            r = self.storage.import_json(path)
-        except (ValueError, OSError) as ex:
-            QMessageBox.warning(self, "가져오기 실패", str(ex))
+            preview = self.storage.import_json(path, dry_run=True)
+        except (ValueError, OSError, KeyError, TypeError) as ex:
+            QMessageBox.warning(self, "가져오기 실패", f"이 파일은 가져올 수 없습니다.\n{ex}")
             return
-        self._load()
-        self.saved.emit()
-        QMessageBox.information(self, "가져오기",
-                                f"새로 추가 {r.added}일, 더 최신이라 바꿈 {r.updated}일, 이쪽이 최신이라 둠 {r.skipped}일")
-
-    def _export_text(self) -> None:
-        self.save()
-        path, _ = QFileDialog.getSaveFileName(self, "TXT 내보내기", f"메모일지_{self.clock():%Y%m%d}.txt", "텍스트 (*.txt)")
-        if path:
-            n = self.storage.export_text(path)
-            QMessageBox.information(self, "내보내기", f"{n}일치를 저장했습니다.\n{path}")
+        box = QMessageBox(self)
+        box.setWindowTitle("가져오기")
+        box.setIcon(QMessageBox.Question)
+        box.setText(f"새로 추가되는 날: {preview.added}일\n"
+                    f"파일 쪽이 더 최신이라 바뀌는 날: {preview.updated}일\n"
+                    f"이 PC 쪽이 최신이라 그대로 두는 날: {preview.skipped}일")
+        box.setInformativeText("가져오기 전에 지금 내용을 자동으로 백업해 둡니다.")
+        check = QCheckBox("속지 배치(줄 수·크기)와 글꼴 설정도 가져오기")
+        box.setCheckBox(check)
+        ok = box.addButton("가져오기", QMessageBox.AcceptRole)
+        box.addButton("취소", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is not ok:
+            return
+        result, backup = self.do_import(path, check.isChecked())
+        msg = f"새로 추가 {result.added}일, 바뀜 {result.updated}일, 그대로 둠 {result.skipped}일"
+        if backup:
+            msg += f"\n\n가져오기 전 내용 백업:\n{backup}"
+        QMessageBox.information(self, "가져오기 완료", msg)
