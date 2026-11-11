@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>소민이 오목눈이 톡톡 놀이방</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+<style>
+:root{ --u:1vmin; --f:"Jua","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; --tab:calc(var(--u)*17); }
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#FFF2F0;font-family:var(--f);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:none;overscroll-behavior:none}
+img{-webkit-user-drag:none;pointer-events:none}
+button{font:inherit;border:0;cursor:pointer;padding:0}
+#stage{position:fixed;left:0;right:0;top:0;bottom:var(--tab);overflow:hidden;transition:background .6s}
+#stage::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 15% 18%,#fff 0 3%,transparent 3.4%),radial-gradient(circle at 21% 15%,#fff 0 4%,transparent 4.4%),radial-gradient(circle at 27% 19%,#fff 0 3%,transparent 3.4%),
+  radial-gradient(circle at 72% 27%,#fff 0 2.6%,transparent 3%),radial-gradient(circle at 77% 24%,#fff 0 3.6%,transparent 4%),radial-gradient(circle at 83% 28%,#fff 0 2.6%,transparent 3%);opacity:.85}
+.ground{position:absolute;left:-5%;right:-5%;bottom:0;height:24%;border-radius:50% 50% 0 0/26% 26% 0 0;background:#BEE7A5;box-shadow:inset 0 2vmin 0 #D3F0BF}
+#layer,#fx{position:absolute;inset:0}
+#fx{pointer-events:none;overflow:hidden}
+
+/* 아래 장면 버튼: 글자 없이 큰 그림만 */
+#tabs{position:fixed;left:0;right:0;bottom:0;height:var(--tab);display:flex;justify-content:center;align-items:center;gap:calc(var(--u)*3);background:#fff;box-shadow:0 -1vmin 0 #F3D9E2;padding-bottom:env(safe-area-inset-bottom,0)}
+#tabs button{width:calc(var(--u)*13);height:calc(var(--u)*13);border-radius:32%;font-size:calc(var(--u)*7.5);background:#FFF2F0;box-shadow:0 1vmin 0 #F3D9E2;line-height:1}
+#tabs button.on{background:#FFE08A;box-shadow:0 1vmin 0 #F5B83D;transform:translateY(-1vmin) scale(1.08)}
+.grown{position:fixed;top:calc(var(--u)*1.5);width:calc(var(--u)*7);height:calc(var(--u)*7);border-radius:50%;background:rgba(255,255,255,.75);font-size:calc(var(--u)*3.4);overflow:hidden;z-index:5;opacity:.75}
+.grown b{position:absolute;inset:0;border-radius:50%;background:conic-gradient(#E2719A var(--p,0%),transparent 0);opacity:.5}
+.grown span{position:relative}
+#home{left:calc(var(--u)*1.5)} #snd{right:calc(var(--u)*1.5)}
+
+/* 오목눈이 */
+.bird{position:absolute;transform:translate(-50%,0);touch-action:none;cursor:pointer}
+.bird img{display:block;width:100%;animation:bob 2.6s ease-in-out infinite;transform-origin:50% 100%}
+.bird.jump img{animation:jump .6s ease-out}
+.bird.chomp img{animation:chomp .5s ease-out}
+.bird.nudge img{animation:nudge .7s ease-in-out}
+@keyframes bob{50%{transform:scale(1.03,.96)}}
+@keyframes jump{0%{transform:scale(1.15,.8)}35%{transform:translateY(-55%) scale(.92,1.1) rotate(-6deg)}70%{transform:translateY(0) scale(1.12,.86)}100%{transform:none}}
+@keyframes chomp{0%,60%{transform:scale(1.18,.86)}30%{transform:scale(.9,1.14)}100%{transform:none}}
+@keyframes nudge{30%{transform:rotate(-8deg) translateY(-8%)}60%{transform:rotate(8deg) translateY(-8%)}}
+
+/* 날아가는 반짝이 */
+.bit{position:absolute;font-size:calc(var(--u)*5);transform:translate(-50%,-50%);animation:bit var(--d,.8s) ease-out forwards;will-change:transform,opacity}
+@keyframes bit{to{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(var(--s,1.4)) rotate(var(--r,0deg));opacity:0}}
+.grow{position:absolute;font-size:calc(var(--u)*9);transform:translate(-50%,-90%) scale(0);transform-origin:50% 100%;animation:grow .5s cubic-bezier(.3,1.6,.5,1) forwards;pointer-events:none}
+@keyframes grow{to{transform:translate(-50%,-90%) scale(1)}}
+.floaty{position:absolute;font-size:calc(var(--u)*8);transform:translate(-50%,-50%);animation:floaty 3s ease-in-out forwards;pointer-events:none}
+@keyframes floaty{0%{transform:translate(-50%,-50%) scale(0)}15%{transform:translate(-50%,-50%) scale(1.2)}100%{transform:translate(-50%,-250%) scale(1) rotate(20deg);opacity:0}}
+
+/* 냠냠 아이스크림 */
+.tray{position:absolute;left:50%;bottom:2%;transform:translateX(-50%);width:min(92%,calc(var(--u)*110));height:calc(var(--u)*17);background:#fff;border-radius:calc(var(--u)*5);box-shadow:0 1vmin 0 #F3D9E2;pointer-events:none}
+.ice{position:absolute;width:calc(var(--u)*13);height:calc(var(--u)*17);margin:calc(var(--u)*-8.5) 0 0 calc(var(--u)*-6.5);touch-action:none;cursor:grab;z-index:3;transition:transform .25s}
+.ice.drag{transition:none;z-index:9}
+.ice.fly{transition:left .45s ease-in,top .45s ease-in,transform .45s}
+.ice i{position:absolute;left:50%;bottom:0;width:0;height:0;margin-left:calc(var(--u)*-4.2);border-left:calc(var(--u)*4.2) solid transparent;border-right:calc(var(--u)*4.2) solid transparent;border-top:calc(var(--u)*8.5) solid #E9B872}
+.ice b{position:absolute;left:50%;top:0;width:calc(var(--u)*11);height:calc(var(--u)*10.5);margin-left:calc(var(--u)*-5.5);border-radius:50% 50% 46% 46%;background:var(--c);box-shadow:inset calc(var(--u)*-1.2) calc(var(--u)*-1.2) 0 rgba(0,0,0,.08),inset calc(var(--u)*1.5) calc(var(--u)*1.5) 0 rgba(255,255,255,.35)}
+.ice.pop{animation:icepop .4s cubic-bezier(.3,1.6,.5,1)}
+@keyframes icepop{from{transform:scale(0)}}
+.bubble{position:absolute;transform:translate(-50%,-100%);background:#fff;border-radius:calc(var(--u)*4);padding:calc(var(--u)*1) calc(var(--u)*3);font-size:calc(var(--u)*6);color:#B9406B;pointer-events:none;animation:bub 1.3s ease-out forwards;white-space:nowrap;z-index:8;box-shadow:0 .6vmin 0 #F3D9E2}
+@keyframes bub{0%{transform:translate(-50%,-80%) scale(0)}15%{transform:translate(-50%,-100%) scale(1.1)}25%,80%{transform:translate(-50%,-100%) scale(1)}100%{transform:translate(-50%,-130%) scale(1);opacity:0}}
+
+/* 까꿍 */
+.hidey{position:absolute;transform:translate(-50%,0);width:calc(var(--u)*24);height:calc(var(--u)*36);touch-action:none;cursor:pointer}
+.hidey .hole{position:absolute;left:0;right:0;top:-20%;bottom:42%;overflow:hidden;pointer-events:none}
+.hidey .peek{position:absolute;left:14%;right:14%;bottom:0;transform:translateY(105%);transition:transform .28s cubic-bezier(.3,1.5,.5,1)}
+.hidey .peek img{width:100%;display:block}
+.hidey.up .peek{transform:translateY(22%)}
+.hidey .cover{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:calc(var(--u)*21);line-height:1.05}
+.hidey.wig .cover{animation:nudge .5s}
+
+/* 풍선 */
+.bal{position:absolute;bottom:0;width:calc(var(--u)*17);margin-left:calc(var(--u)*-8.5);animation:rise var(--t,11s) linear forwards;touch-action:none;cursor:pointer;will-change:transform}
+.bal .b{width:100%;height:calc(var(--u)*21);border-radius:50% 50% 50% 50%/46% 46% 54% 54%;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.75) 0 9%,transparent 10%),var(--c);position:relative;animation:sway 2.4s ease-in-out infinite alternate}
+.bal .b::after{content:"";position:absolute;left:50%;top:99%;width:2px;height:calc(var(--u)*9);background:rgba(0,0,0,.25)}
+.bal img{display:block;width:62%;margin:calc(var(--u)*5) auto 0}
+@keyframes rise{from{transform:translateY(110%)}to{transform:translateY(calc(-100vh - 20%))}}
+@keyframes sway{from{transform:translateX(-6%) rotate(-3deg)}to{transform:translateX(6%) rotate(3deg)}}
+.faller{position:absolute;width:calc(var(--u)*13);margin-left:calc(var(--u)*-6.5);transition:top 1.4s cubic-bezier(.3,0,.6,1.3);pointer-events:none}
+.faller img{width:100%;display:block}
+.faller::before{content:"☂️";position:absolute;left:50%;top:-70%;transform:translateX(-50%);font-size:calc(var(--u)*11);transition:opacity .3s 1.3s}
+.faller.sat::before{opacity:0}
+#big{position:absolute;left:50%;top:26%;transform:translate(-50%,-50%);font-size:calc(var(--u)*30);color:#fff;text-shadow:0 1.2vmin 0 #E2719A,0 2vmin 4vmin rgba(0,0,0,.2);pointer-events:none;opacity:0}
+#big.show{animation:bigpop .9s ease-out}
+@keyframes bigpop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}35%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0}}
+</style>
+</head>
+<body>
+<div id="stage"><div id="back"></div><div class="ground"></div><div id="layer"></div><div id="big"></div><div id="fx"></div></div>
+<nav id="tabs">
+  <button data-s="field" aria-label="오목눈이 들판">🐦</button>
+  <button data-s="yum" aria-label="냠냠 아이스크림">🍦</button>
+  <button data-s="peek" aria-label="까꿍 놀이">🙈</button>
+  <button data-s="balloon" aria-label="풍선 터뜨리기">🎈</button>
+</nav>
+<button id="home" class="grown" aria-label="나가기 (꾹 누르기)"><b></b><span>🏠</span></button>
+<button id="snd" class="grown" aria-label="소리 (꾹 누르기)"><b></b><span>🔊</span></button>
+
+<script>
+'use strict';
+/* 소민이(만 31개월) 놀이방: 점수·시간·실패가 없고, 어디를 눌러도 반응이 온다.
+   어른용 버튼(집, 소리)은 1초 꾹 눌러야 동작한다. */
+const $ = s => document.querySelector(s), layer = $('#layer'), fx = $('#fx'), stage = $('#stage');
+const BIRDS = ['bow_pink','bow_blue','bow_yellow','bow_purple','grey','headphone','hood','mandarin','white','chef'];
+const pick = a => a[Math.random() * a.length | 0], rnd = (a, b) => a + Math.random() * (b - a);
+const birdSrc = id => `assets/birds/${id}.webp`;
+let timers = [], scene = '';
+const later = (f, ms) => { const t = setTimeout(f, ms); timers.push(t); return t; };
+const every = (f, ms) => { const t = setInterval(f, ms); timers.push(t); return t; };
+
+/* ---------- 소리와 말 ---------- */
+let actx = null, muted = false;
+function audio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (actx && actx.state === 'suspended') actx.resume(); }
+function tone(f, dur = .15, type = 'sine', vol = .15, when = 0, slide = 0) { if (muted || !actx) return; const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, f + slide), t + dur);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + .03); }
+const NOTES = [523, 587, 659, 784, 880, 1047, 1175, 1319]; let noteI = 0;
+const sfx = {
+  note() { tone(NOTES[noteI++ % NOTES.length], .3, 'triangle', .16); },
+  chirp(k = 0) { const b = 2000 + k * 160; tone(b, .08, 'sine', .13, 0, 900); tone(b + 600, .09, 'sine', .12, .09, -700); },
+  yum() { tone(330, .09, 'square', .07); tone(392, .09, 'square', .07, .11); tone(523, .16, 'triangle', .14, .22); },
+  pop() { tone(900, .1, 'square', .1, 0, -700); tone(1319, .2, 'triangle', .12, .05); },
+  boo() { tone(392, .12, 'triangle', .15); tone(784, .25, 'triangle', .15, .12); },
+  whee() { tone(1200, .9, 'sine', .08, 0, -700); },
+};
+let voice = null;
+function say(text) { if (muted || !('speechSynthesis' in window)) return; try { const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = .9; u.pitch = 1.5; u.volume = 1;
+  voice = voice || speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith('ko')); if (voice) u.voice = voice; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {} }
+
+/* ---------- 반짝이 효과 ---------- */
+function xy(e) { const r = stage.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top, r.width, r.height]; }
+function bits(x, y, chars, n = 7, dist = 16) { const u = Math.min(innerWidth, innerHeight) / 100;
+  for (let i = 0; i < n; i++) { const b = document.createElement('div'); b.className = 'bit'; b.textContent = pick(chars); const a = Math.random() * 6.283, d = dist * u * rnd(.5, 1);
+    b.style.cssText = `left:${x}px;top:${y}px;--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d - 4 * u}px;--r:${rnd(-90, 90)}deg;--d:${rnd(.6, 1)}s;--s:${rnd(.8, 1.5)}`; fx.appendChild(b); setTimeout(() => b.remove(), 1100); } }
+function bubble(x, y, text) { const b = document.createElement('div'); b.className = 'bubble'; b.textContent = text; b.style.left = x + 'px'; b.style.top = y + 'px'; fx.appendChild(b); setTimeout(() => b.remove(), 1400); }
+function anim(el, cls, ms) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), ms); }
+function mkBird(id, xPct, bottomPct, sizeU) { const d = document.createElement('div'); d.className = 'bird'; d.style.cssText = `left:${xPct}%;bottom:${bottomPct}%;width:calc(var(--u)*${sizeU})`; d.innerHTML = `<img src="${birdSrc(id)}" alt="">`;
+  d.firstChild.style.animationDelay = -Math.random() * 2 + 's'; layer.appendChild(d); return d; }
+const center = el => { const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect(); return [r.left + r.width / 2 - s.left, r.top + r.height / 2 - s.top]; };
+
+/* ---------- 장면 1: 오목눈이 들판 (누르면 짹짹 통통, 땅에는 꽃, 하늘에는 별) ---------- */
+function sceneField() { stage.style.background = 'linear-gradient(#CDEBFF,#F6FBFF 70%)';
+  const ids = BIRDS.slice().sort(() => Math.random() - .5).slice(0, 5), birds = ids.map((id, i) => { const b = mkBird(id, 12 + i * 19, 6 + (i % 2) * 5, 24);
+    b.addEventListener('pointerdown', e => { e.stopPropagation(); audio(); anim(b, 'jump', 600); sfx.chirp(i); const [x, y] = center(b); bits(x, y - b.offsetHeight * .3, ['💗', '💕', '✨', '🎵'], 6); }); return b; });
+  every(() => anim(pick(birds), 'nudge', 700), 2600);
+  const grown = [];
+  layer.onpointerdown = e => { audio(); const [x, y, w, h] = xy(e); sfx.note();
+    if (y > h * .76) { const f = document.createElement('div'); f.className = 'grow'; f.textContent = pick(['🌷', '🌼', '🌸', '🌻', '🍄', '🍓']); f.style.left = x + 'px'; f.style.top = y + 'px'; layer.appendChild(f); grown.push(f); if (grown.length > 24) grown.shift().remove(); bits(x, y, ['✨'], 4, 9); }
+    else { const f = document.createElement('div'); f.className = 'floaty'; f.textContent = pick(['⭐', '🦋', '🫧', '🌈', '☁️', '🎵']); f.style.left = x + 'px'; f.style.top = y + 'px'; fx.appendChild(f); setTimeout(() => f.remove(), 3000); bits(x, y, ['✨', '⭐'], 5, 12); } };
+}
+
+/* ---------- 장면 2: 냠냠 아이스크림 (끌어다 주거나 톡 누르면 날아간다) ---------- */
+const FLAV = [['딸기', '#FF9DBB'], ['초코', '#9E6E54'], ['우유', '#FFF7E8'], ['민트', '#9FE3C8'], ['포도', '#C4A3F5'], ['귤', '#FFB54D']];
+function sceneYum() { stage.style.background = 'linear-gradient(#FFE3EC,#FFF7EC 70%)';
+  const ids = BIRDS.slice().sort(() => Math.random() - .5).slice(0, 3), birds = ids.map((id, i) => mkBird(id, 20 + i * 30, 30, 28));
+  birds.forEach(b => b.style.pointerEvents = 'none');
+  const tray = document.createElement('div'); tray.className = 'tray'; layer.appendChild(tray);
+  const slots = [0, 1, 2, 3], slotX = i => 50 + (i - 1.5) * 22;
+  function feed(ice, bird) { const [bx, by] = center(bird); ice.classList.remove('drag'); ice.classList.add('fly'); ice.style.left = bx + 'px'; ice.style.top = by + 'px'; ice.style.transform = 'scale(.35) rotate(40deg)'; ice.style.pointerEvents = 'none';
+    later(() => { ice.remove(); anim(bird, 'chomp', 500); sfx.yum(); bits(bx, by, ['💗', '😋', '✨', '🍦'], 7); bubble(bx, by - bird.offsetHeight * .45, '냠냠!'); say(ice.dataset.name + ' 냠냠'); later(() => spawn(+ice.dataset.slot), 500); }, 460); }
+  function spawn(slot) { const [name, c] = pick(FLAV), ice = document.createElement('div'); ice.className = 'ice pop'; ice.dataset.name = name; ice.dataset.slot = slot; ice.style.setProperty('--c', c); ice.innerHTML = '<i></i><b></b>';
+    const home = () => { const s = stage.getBoundingClientRect(), u = Math.min(innerWidth, innerHeight) / 100; ice.style.left = slotX(slot) / 100 * s.width + 'px'; ice.style.top = s.height * .98 - 10.5 * u + 'px'; }; home(); layer.appendChild(ice);
+    let sx = 0, sy = 0, ox = 0, oy = 0, moved = 0, id = null;
+    ice.addEventListener('pointerdown', e => { audio(); if (id !== null) return; id = e.pointerId; try { ice.setPointerCapture(id); } catch (_) {} sx = e.clientX; sy = e.clientY; ox = parseFloat(ice.style.left); oy = parseFloat(ice.style.top); moved = 0; ice.classList.add('drag'); ice.style.transform = 'scale(1.15)'; sfx.note(); });
+    ice.addEventListener('pointermove', e => { if (e.pointerId !== id) return; const dx = e.clientX - sx, dy = e.clientY - sy; moved = Math.max(moved, Math.hypot(dx, dy)); ice.style.left = ox + dx + 'px'; ice.style.top = oy + dy + 'px'; });
+    const up = e => { if (e.pointerId !== id) return; id = null; const [ix, iy] = center(ice); let best = null, bd = 1e9; birds.forEach(b => { const [bx, by] = center(b), d = Math.hypot(bx - ix, by - iy); if (d < bd) { bd = d; best = b; } });
+      if (moved < 14) feed(ice, pick(birds)); else if (bd < best.offsetWidth * .8) feed(ice, best); else { ice.classList.remove('drag'); ice.style.transform = ''; ice.classList.add('fly'); home(); later(() => ice.classList.remove('fly'), 460); } };
+    ice.addEventListener('pointerup', up); ice.addEventListener('pointercancel', up); }
+  slots.forEach(spawn);
+  layer.onpointerdown = e => { if (e.target !== layer) return; audio(); const [x, y] = xy(e); sfx.note(); bits(x, y, ['✨', '💗'], 5, 10); };
+  every(() => anim(pick(birds), 'nudge', 700), 3000);
+}
+
+/* ---------- 장면 3: 까꿍 (누르면 숨어 있던 오목눈이가 쏙) ---------- */
+function scenePeek() { stage.style.background = 'linear-gradient(#E5DAFF,#FFF4FA 70%)';
+  const covers = ['🎁', '🌳', '🧺', '🍄', '📦'].sort(() => Math.random() - .5).slice(0, 4);
+  covers.forEach((c, i) => { const h = document.createElement('div'); h.className = 'hidey'; h.style.left = 14 + i * 24 + '%'; h.style.bottom = 4 + (i % 2) * 5 + '%';
+    h.innerHTML = `<div class="hole"><div class="peek"><img src="${birdSrc(pick(BIRDS))}" alt=""></div></div><div class="cover">${c}</div>`; layer.appendChild(h); let busy = false;
+    h.addEventListener('pointerdown', e => { e.stopPropagation(); audio(); if (busy) { anim(h, 'wig', 500); return; } busy = true; anim(h, 'wig', 500); h.classList.add('up'); sfx.boo(); say('까꿍!');
+      const [x, y] = center(h); bits(x, y - h.offsetHeight * .35, ['✨', '💗', '⭐'], 7); bubble(x, y - h.offsetHeight * .5, '까꿍!');
+      later(() => { h.classList.remove('up'); later(() => { h.querySelector('img').src = birdSrc(pick(BIRDS)); busy = false; }, 320); }, 1500); }); });
+  layer.onpointerdown = e => { audio(); const [x, y] = xy(e); sfx.note(); bits(x, y, ['✨', '⭐'], 5, 10); };
+}
+
+/* ---------- 장면 4: 풍선 (터뜨리면 하나, 둘, 셋… 오목눈이는 우산 타고 내려온다) ---------- */
+const NUM = ['하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
+const BCOL = [['빨강', '#FF7C8E'], ['노랑', '#FFD45E'], ['파랑', '#7DBBFF'], ['초록', '#8EDB9B'], ['보라', '#C4A3F5'], ['분홍', '#FFA6CB']];
+function sceneBalloon() { stage.style.background = 'linear-gradient(#BFE4FF,#EAF7FF 70%)'; let count = 0; const sat = [];
+  function add() { if (layer.querySelectorAll('.bal').length >= 8) return; const [cname, c] = pick(BCOL), b = document.createElement('div'); b.className = 'bal'; const rider = Math.random() < .35 ? pick(BIRDS) : null;
+    b.style.left = rnd(10, 90) + '%'; b.style.setProperty('--c', c); b.style.setProperty('--t', rnd(9, 13) + 's'); b.innerHTML = `<div class="b"></div>` + (rider ? `<img src="${birdSrc(rider)}" alt="">` : '');
+    b.addEventListener('animationend', e => { if (e.animationName === 'rise') b.remove(); });
+    b.addEventListener('pointerdown', e => { e.stopPropagation(); audio(); const r = b.getBoundingClientRect(), s = stage.getBoundingClientRect(), x = r.left + r.width / 2 - s.left, y = r.top + r.width * .6 - s.top; b.remove(); sfx.pop();
+      bits(x, y, ['🎉', '✨', '⭐', '💗', '🎊'], 10, 22); count = count % 10 + 1; const big = $('#big'); big.textContent = count; big.style.textShadow = `0 1.2vmin 0 ${c},0 2vmin 4vmin rgba(0,0,0,.2)`; anim(big, 'show', 900); say(NUM[count - 1]);
+      if (count === 10) later(() => { for (let k = 0; k < 6; k++) later(() => bits(rnd(.1, .9) * s.width, rnd(.15, .6) * s.height, ['🎉', '🎊', '⭐', '💗'], 10, 24), k * 160); [523, 659, 784, 1047].forEach((f, i) => tone(f, .3, 'triangle', .14, i * .12)); }, 500);
+      if (rider) { const f = document.createElement('div'); f.className = 'faller'; f.innerHTML = `<img src="${birdSrc(rider)}" alt="">`; f.style.left = x + 'px'; f.style.top = y + 'px'; layer.appendChild(f); sfx.whee(); void f.offsetWidth; f.style.top = s.height * .83 - f.offsetWidth * .8 + 'px';
+        later(() => { f.classList.add('sat'); sfx.chirp(2); }, 1400); sat.push(f); if (sat.length > 6) sat.shift().remove(); } });
+    layer.appendChild(b); }
+  add(); later(add, 400); every(add, 1100);
+  layer.onpointerdown = e => { audio(); const [x, y] = xy(e); sfx.note(); bits(x, y, ['✨'], 4, 9); };
+}
+
+/* ---------- 장면 바꾸기 ---------- */
+const SCENES = { field: sceneField, yum: sceneYum, peek: scenePeek, balloon: sceneBalloon };
+function go(name) { if (name === scene) return; scene = name; timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = []; layer.innerHTML = ''; fx.innerHTML = ''; layer.onpointerdown = null;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.s === name)); SCENES[name](); }
+document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('pointerdown', () => { audio(); sfx.boo(); go(b.dataset.s); }));
+
+/* 어른용 버튼: 1초 꾹 */
+function hold(btn, fn) { let t0 = 0, iv = 0; const stop = () => { clearInterval(iv); iv = 0; btn.style.setProperty('--p', '0%'); };
+  btn.addEventListener('pointerdown', () => { t0 = performance.now(); clearInterval(iv); iv = setInterval(() => { const p = (performance.now() - t0) / 1000; btn.style.setProperty('--p', p * 100 + '%'); if (p >= 1) { stop(); fn(); } }, 30); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => btn.addEventListener(n, stop)); }
+hold($('#home'), () => { location.href = 'games.html'; });
+hold($('#snd'), () => { muted = !muted; $('#snd span').textContent = muted ? '🔇' : '🔊'; if (muted && 'speechSynthesis' in window) speechSynthesis.cancel(); audio(); sfx.note(); });
+addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault());
+if ('speechSynthesis' in window) speechSynthesis.getVoices();
+go('field');
+</script>
+</body>
+</html>

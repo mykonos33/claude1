@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>오목눈이 생일 파티 준비</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{ --u:clamp(5px,1vmin,11px); --pink:#F7A8C0; --pink-deep:#E2719A; --berry:#B9406B; --ink:#4A3833; --ink-soft:#8A7670; --line:#F3D9E2; --butter:#FFE08A; --gold:#F5B83D;
+  --f:"Jua","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; --fb:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; }
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#FFF2F0;color:var(--ink);font-family:var(--f);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:none;overscroll-behavior:none}
+img{-webkit-user-drag:none;pointer-events:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;padding:0;touch-action:none}
+.hide{display:none!important}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+
+/* 위쪽: 팀 점수 */
+#top{flex:none;height:calc(var(--u)*9);display:flex;align-items:center;gap:calc(var(--u)*2);padding:0 calc(var(--u)*2);background:#fff;box-shadow:0 .8vmin 0 var(--line);z-index:3}
+#time{font-size:calc(var(--u)*5);width:calc(var(--u)*13);text-align:center;background:var(--butter);border-radius:99px;font-variant-numeric:tabular-nums}
+#meter{flex:1;height:calc(var(--u)*4.4);border-radius:99px;background:#FBE9EE;position:relative;min-width:0}
+#meter i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:linear-gradient(90deg,var(--pink),var(--pink-deep));transition:width .3s}
+#meter b{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:calc(var(--u)*6);color:#E9D6DC;font-weight:400;transition:color .3s,transform .3s}
+#meter b.on{color:var(--gold);transform:translate(-50%,-50%) scale(1.25) rotate(-10deg)}
+#score{font-size:calc(var(--u)*5);color:var(--berry);min-width:calc(var(--u)*14);text-align:right;font-variant-numeric:tabular-nums}
+#quit{width:calc(var(--u)*6.4);height:calc(var(--u)*6.4);border-radius:50%;background:#FFF2F0;font-size:calc(var(--u)*3.4)}
+
+#main{flex:1;display:flex;min-height:0}
+#main.swap{flex-direction:row-reverse}
+
+/* 유민: 케이크 공방 */
+#bake{flex:1.75;min-width:0;display:flex;flex-direction:column;position:relative;background:linear-gradient(#FFE9EF,#FFF6EC)}
+#bake.cheer{animation:cheerbg .6s infinite alternate}
+@keyframes cheerbg{from{background-color:#FFF0B8}to{background-color:#FFD9E6}}
+#bake.cheer{background-image:none}
+.b-top{flex:1;display:flex;align-items:flex-end;justify-content:center;gap:calc(var(--u)*3);padding:calc(var(--u)*1.5) calc(var(--u)*2) 0;min-height:0}
+#guest{width:calc(var(--u)*21);flex:none;position:relative;align-self:flex-end}
+#guest img{width:100%;display:block;transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
+#guest.in img{animation:hopin .5s ease-out}
+#guest.no img{animation:no .45s}
+#guest.yay img{animation:yay .7s}
+@keyframes bob{50%{transform:scale(1.03,.96)}}
+@keyframes hopin{from{transform:translateX(-120%) rotate(-20deg)}}
+@keyframes no{25%{transform:translateX(-7%) rotate(-5deg)}75%{transform:translateX(7%) rotate(5deg)}}
+@keyframes yay{30%{transform:translateY(-35%) scale(.94,1.08)}60%{transform:scale(1.1,.88)}}
+.card{background:#fff;border-radius:calc(var(--u)*4);box-shadow:0 .8vmin 0 var(--line);padding:calc(var(--u)*1.4) calc(var(--u)*2.4);display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*.6);position:relative}
+.card small{font-size:calc(var(--u)*2.8);color:var(--ink-soft)}
+#orderCard{align-self:flex-end;margin-bottom:calc(var(--u)*4)}
+#orderCard .veil{position:absolute;inset:0;border-radius:inherit;background:var(--butter);display:none;align-items:center;justify-content:center;flex-direction:column;font-size:calc(var(--u)*3.4);color:#8a5a00;text-align:center;line-height:1.3}
+#orderCard.veiled .veil{display:flex}
+#plate{align-self:flex-end;display:flex;flex-direction:column;align-items:center;min-width:calc(var(--u)*34)}
+#plate .dish{width:calc(var(--u)*34);height:calc(var(--u)*3);border-radius:50%;background:#fff;box-shadow:0 .8vmin 0 var(--line);margin-top:calc(var(--u)*-1)}
+#serve{margin:calc(var(--u)*1.2) 0;font-size:calc(var(--u)*4);color:#fff;background:var(--pink-deep);border-radius:99px;padding:.25em 1.2em;box-shadow:0 .7vmin 0 var(--berry)}
+#serve:active{transform:translateY(.4vmin)}
+#serve[disabled]{background:#E6D5DA;box-shadow:0 .7vmin 0 #D6C2C8}
+
+/* 케이크 그림 */
+.cake{display:flex;flex-direction:column-reverse;align-items:center;--w:calc(var(--u)*22);--h:calc(var(--u)*4.6)}
+.cake.small{--w:calc(var(--u)*15);--h:calc(var(--u)*3.2)}
+.cake .ly{width:var(--w);height:var(--h);background:var(--c);border-radius:calc(var(--h)*.28);box-shadow:inset 0 calc(var(--h)*-.22) 0 rgba(0,0,0,.09);margin-top:calc(var(--h)*-.08)}
+.cake .ly:nth-child(2){width:calc(var(--w)*.9)} .cake .ly:nth-child(3){width:calc(var(--w)*.8)} .cake .ly:nth-child(4){width:calc(var(--w)*.7)}
+.cake .cr{width:calc(var(--w)*.74);height:calc(var(--h)*.55);background:var(--c);border-radius:calc(var(--h)*.3) calc(var(--h)*.3) calc(var(--h)*.5) calc(var(--h)*.5);margin-bottom:calc(var(--h)*-.2);z-index:1;
+  box-shadow:calc(var(--w)*-.25) calc(var(--h)*.28) 0 calc(var(--h)*-.12) var(--c),calc(var(--w)*.22) calc(var(--h)*.34) 0 calc(var(--h)*-.1) var(--c),0 calc(var(--h)*.3) 0 calc(var(--h)*-.12) var(--c);border:1px solid rgba(0,0,0,.06)}
+.cake .tp{font-size:calc(var(--h)*1.25);line-height:1;margin-bottom:calc(var(--h)*-.12);z-index:2}
+.cake .ly,.cake .cr,.cake .tp{animation:drop .22s ease-out}
+@keyframes drop{from{transform:translateY(-140%);opacity:0}}
+.cake.empty::after{content:"빵부터 쌓아요";font-size:calc(var(--u)*3);color:#D9C5CB;padding:calc(var(--u)*3) 0}
+
+/* 재료 */
+#tiles{flex:none;display:flex;flex-direction:column;gap:calc(var(--u)*1);padding:calc(var(--u)*1.2) calc(var(--u)*1);background:rgba(255,255,255,.7)}
+.row{display:flex;align-items:center;gap:calc(var(--u)*1.4);justify-content:center}
+.row>span{width:calc(var(--u)*7);font-size:calc(var(--u)*3);color:var(--ink-soft);flex:none;text-align:right}
+.tile{width:calc(var(--u)*12);height:calc(var(--u)*8.4);border-radius:calc(var(--u)*3);background:#fff;border:.5vmin solid var(--line);box-shadow:0 .7vmin 0 var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:calc(var(--u)*2.5);gap:.1em;flex:none}
+.tile:active{transform:translateY(.5vmin);box-shadow:0 .2vmin 0 var(--line)}
+.tile i{width:calc(var(--u)*6.5);height:calc(var(--u)*3.2);border-radius:calc(var(--u)*1.2);background:var(--c);border:1px solid rgba(0,0,0,.08);display:block}
+.tile i.cream{border-radius:50% 50% 40% 40%;height:calc(var(--u)*3.6)}
+.tile em{font-style:normal;font-size:calc(var(--u)*4.4);line-height:1}
+.tile.off{opacity:.35}
+.tile.undo{background:#FFF2F0;color:var(--berry);font-size:calc(var(--u)*3)}
+#cheerTag{position:absolute;left:50%;top:calc(var(--u)*1.5);transform:translateX(-50%);font-size:calc(var(--u)*4);color:#fff;background:var(--gold);border-radius:99px;padding:.1em 1em;box-shadow:0 .6vmin 0 #D89A23;white-space:nowrap;z-index:2;animation:pulse .5s infinite alternate}
+@keyframes pulse{to{transform:translateX(-50%) scale(1.08)}}
+
+/* 소민: 풍선 방 */
+#pop{flex:1;min-width:0;position:relative;overflow:hidden;background:linear-gradient(#BFE4FF,#EAF7FF);border-left:1vmin solid #fff}
+#main.swap #pop{border-left:0;border-right:1vmin solid #fff}
+#gauge{position:absolute;left:8%;right:8%;top:calc(var(--u)*1.6);height:calc(var(--u)*5);border-radius:99px;background:rgba(255,255,255,.8);overflow:hidden;z-index:2;pointer-events:none}
+#gauge i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#FFD45E,#FF9DBB);transition:width .25s;border-radius:99px}
+#gauge b{position:absolute;inset:0;text-align:center;font-weight:400;font-size:calc(var(--u)*3.6);line-height:calc(var(--u)*5)}
+#who{position:absolute;left:50%;bottom:0;width:42%;transform:translateX(-50%);opacity:.9;pointer-events:none}
+#who img{width:100%;display:block}
+.bal{position:absolute;bottom:0;width:calc(var(--u)*17);margin-left:calc(var(--u)*-8.5);animation:rise var(--t,9s) linear forwards;will-change:transform}
+.bal .b{width:100%;height:calc(var(--u)*21);border-radius:50%/46% 46% 54% 54%;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.75) 0 9%,transparent 10%),var(--c);position:relative;animation:sway 2.2s ease-in-out infinite alternate;display:grid;place-items:center;font-size:calc(var(--u)*8)}
+.bal .b::after{content:"";position:absolute;left:50%;top:99%;width:2px;height:calc(var(--u)*8);background:rgba(0,0,0,.25)}
+@keyframes rise{from{transform:translateY(110%)}to{transform:translateY(-100vh)}}
+@keyframes sway{from{transform:translateX(-6%) rotate(-3deg)}to{transform:translateX(6%) rotate(3deg)}}
+#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:6}
+.bit{position:absolute;font-size:calc(var(--u)*5);transform:translate(-50%,-50%);animation:bit var(--d,.8s) ease-out forwards}
+@keyframes bit{to{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.4) rotate(var(--r));opacity:0}}
+.fl{position:absolute;transform:translate(-50%,-50%);font-size:calc(var(--u)*6);color:var(--berry);text-shadow:0 .5vmin 0 #fff;animation:fl 1s ease-out forwards;white-space:nowrap}
+@keyframes fl{to{transform:translate(-50%,-220%);opacity:0}}
+
+/* 덮개 화면 */
+.ov{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:rgba(255,242,240,.94);padding:calc(var(--u)*2)}
+.panel{display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*2.2);text-align:center;max-width:100%}
+.panel h1{margin:0;font-weight:400;font-size:calc(var(--u)*9);color:var(--berry);line-height:1.05}
+.panel p{margin:0;font-family:var(--fb);font-size:calc(var(--u)*3.2);color:var(--ink-soft);line-height:1.5}
+.duo{display:flex;gap:calc(var(--u)*3);align-items:stretch}
+.duo.swap{flex-direction:row-reverse}
+.duo>div{background:#fff;border-radius:calc(var(--u)*4);box-shadow:0 .8vmin 0 var(--line);padding:calc(var(--u)*2);width:calc(var(--u)*40);display:flex;flex-direction:column;align-items:center;gap:.3em}
+.duo img{height:calc(var(--u)*17)}
+.duo b{font-weight:400;font-size:calc(var(--u)*4.2);color:var(--berry)}
+.duo span{font-family:var(--fb);font-size:calc(var(--u)*2.7);color:var(--ink-soft);line-height:1.45}
+.btn{font-size:calc(var(--u)*5);color:#fff;background:var(--pink-deep);border-radius:99px;padding:.3em 1.4em;box-shadow:0 .8vmin 0 var(--berry)}
+.btn.alt{background:#fff;color:var(--berry);box-shadow:0 .8vmin 0 var(--line);font-size:calc(var(--u)*3.6)}
+.btn:active{transform:translateY(.4vmin)}
+.btns{display:flex;gap:calc(var(--u)*2);flex-wrap:wrap;justify-content:center;align-items:center}
+.stars{font-size:calc(var(--u)*11);color:var(--gold);letter-spacing:.08em;line-height:1}
+#guests{display:flex;flex-wrap:wrap;justify-content:center;max-width:calc(var(--u)*90);gap:calc(var(--u)*.5)}
+#guests img{height:calc(var(--u)*10);animation:bob 1.2s ease-in-out infinite}
+#cd{font-size:calc(var(--u)*40);color:#fff;text-shadow:0 1.4vmin 0 var(--berry)}
+@media (orientation:portrait){ #main,#main.swap{flex-direction:column} #main.swap{flex-direction:column-reverse} #pop{border:0;border-top:1vmin solid #fff;flex:.6} .duo{flex-direction:column} }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top"><div id="time">90</div><div id="meter"><i></i><b style="left:33%">★</b><b style="left:66%">★</b><b style="left:98%">★</b></div><div id="score">0점</div><button id="quit" aria-label="그만하기">✕</button></div>
+  <div id="main">
+    <section id="bake">
+      <div id="cheerTag" class="hide">소민이 응원 파워! 점수 2배</div>
+      <div class="b-top">
+        <div id="guest"><img alt=""></div>
+        <div class="card" id="orderCard"><small>주문</small><div class="cake small" id="orderCake"></div><div class="veil">기억해서 만들기!<br>눌러서 다시 보기</div></div>
+        <div id="plate"><div class="cake empty" id="myCake"></div><div class="dish"></div><button id="serve" disabled>완성!</button></div>
+      </div>
+      <div id="tiles"></div>
+    </section>
+    <section id="pop"><div id="gauge"><i></i><b>💗</b></div><div id="who"><img src="assets/girls/somin.webp" alt=""></div></section>
+  </div>
+</div>
+<div id="fx"></div>
+
+<div class="ov" id="title"><div class="panel">
+  <h1>오목눈이 생일 파티 준비</h1>
+  <p>둘이 한 팀! 점수를 합쳐서 파티 별 3개를 모아요</p>
+  <div class="duo" id="duo">
+    <div><img src="assets/girls/yumin.webp" alt=""><b>유민: 케이크 만들기</b><span>주문대로 빵 → 크림 → 장식을 올려요.<br>나중에는 주문이 가려져요. 기억력 승부!</span></div>
+    <div><img src="assets/girls/somin.webp" alt=""><b>소민: 풍선 터뜨리기</b><span>풍선을 톡톡! 8개 터뜨리면<br>언니 점수가 2배가 돼요</span></div>
+  </div>
+  <div class="btns"><button class="btn" id="go">시작!</button><button class="btn alt" id="swap">자리 바꾸기</button><button class="btn alt" id="mute">소리 끄기</button><button class="btn alt" id="back">다른 게임</button></div>
+</div></div>
+<div class="ov hide" id="count"><div id="cd">3</div></div>
+<div class="ov hide" id="result"><div class="panel">
+  <h1 id="rH">파티 준비 완료!</h1>
+  <div class="stars" id="rS"></div>
+  <p id="rP"></p>
+  <div id="guests"></div>
+  <div class="btns"><button class="btn" id="again">한 번 더</button><button class="btn alt" id="home2">처음으로</button></div>
+</div></div>
+
+<script>
+'use strict';
+/* 협동 게임: 유민이는 케이크 주문(기억력), 소민이는 풍선. 점수는 하나로 합친다. 지는 사람이 없다. */
+const $ = s => document.querySelector(s);
+/* ---------- 설정값 ---------- */
+const CFG = { time: 90, stars: [50, 110, 170], cheerNeed: 8, cheerSec: 8, veilFrom: 3, veilAfter: 3.5, balloonEvery: 850, balloonMax: 7 };
+const SPONGE = [['딸기', '#FFA9C0'], ['초코', '#9E6E54'], ['바닐라', '#FFE9A8'], ['민트', '#A6E6CC']];
+const CREAM = [['생크림', '#FFFDF8'], ['딸기크림', '#FF8FB0'], ['초코크림', '#7A4E3A']];
+const TOP = ['🍓', '🍒', '⭐', '🕯️'];
+const BIRDS = ['bow_pink', 'bow_blue', 'bow_yellow', 'bow_purple', 'grey', 'headphone', 'hood', 'mandarin', 'white', 'nest_l', 'nest_r'];
+const BCOL = ['#FF7C8E', '#FFD45E', '#7DBBFF', '#8EDB9B', '#C4A3F5', '#FFA6CB'];
+const pick = a => a[Math.random() * a.length | 0], rnd = (a, b) => a + Math.random() * (b - a);
+
+/* ---------- 소리 ---------- */
+let actx = null, muted = false; try { muted = localStorage.getItem('omok-muted') === '1'; } catch (e) {}
+function audio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (actx && actx.state === 'suspended') actx.resume(); }
+function tone(f, dur = .12, type = 'sine', vol = .13, when = 0, slide = 0) { if (muted || !actx) return; const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, f + slide), t + dur);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + .03); }
+const NOTES = [523, 587, 659, 784, 880, 1047, 1175, 1319]; let noteI = 0;
+const sfx = { tap() { tone(660, .07, 'triangle'); }, pop() { tone(NOTES[noteI++ % 8], .2, 'triangle', .14); tone(900, .06, 'square', .05, 0, -600); }, ok() { [659, 784, 1047].forEach((f, i) => tone(f, .18, 'triangle', .14, i * .08)); },
+  no() { tone(220, .2, 'sawtooth', .07, 0, -60); }, cheer() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .2, 'triangle', .14, i * .07)); }, tick() { tone(880, .06, 'square', .06); }, end() { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, .25, 'triangle', .14, i * .12)); } };
+function renderMute() { $('#mute').textContent = muted ? '소리 켜기' : '소리 끄기'; }
+$('#mute').onclick = () => { muted = !muted; try { localStorage.setItem('omok-muted', muted ? '1' : '0'); } catch (e) {} renderMute(); audio(); sfx.tap(); }; renderMute();
+
+/* ---------- 효과 ---------- */
+const fx = $('#fx');
+function bits(x, y, chars, n = 8, dist = 18) { const u = Math.min(innerWidth, innerHeight) / 100; for (let i = 0; i < n; i++) { const b = document.createElement('div'); b.className = 'bit'; b.textContent = pick(chars); const a = Math.random() * 6.283, d = dist * u * rnd(.5, 1);
+  b.style.cssText = `left:${x}px;top:${y}px;--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px;--r:${rnd(-90, 90)}deg;--d:${rnd(.6, 1)}s`; fx.appendChild(b); setTimeout(() => b.remove(), 1100); } }
+function floatTxt(x, y, t) { const f = document.createElement('div'); f.className = 'fl'; f.textContent = t; f.style.left = x + 'px'; f.style.top = y + 'px'; fx.appendChild(f); setTimeout(() => f.remove(), 1000); }
+function anim(el, cls, ms) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), ms); }
+const mid = el => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+
+/* ---------- 상태 ---------- */
+let playing = false, tLeft = 0, score = 0, cakes = 0, pops = 0, order = null, mine = null, cheer = 0, cheerT = 0, veilT = 0, guestId = '', served = [], loop = 0, balIv = 0, lastT = 0, peeks = 0;
+function cakeHTML(c) { return c.ly.map(i => `<div class="ly" style="--c:${SPONGE[i][1]}"></div>`).join('') + (c.cr >= 0 ? `<div class="cr" style="--c:${CREAM[c.cr][1]}"></div>` : '') + (c.tp >= 0 ? `<div class="tp">${TOP[c.tp]}</div>` : ''); }
+function renderMine() { const el = $('#myCake'); el.innerHTML = cakeHTML(mine); el.classList.toggle('empty', !mine.ly.length); $('#serve').disabled = !(mine.ly.length && mine.cr >= 0 && mine.tp >= 0);
+  document.querySelectorAll('.tile[data-k=ly]').forEach(t => t.classList.toggle('off', mine.cr >= 0 || mine.ly.length >= 4));
+  document.querySelectorAll('.tile[data-k=cr]').forEach(t => t.classList.toggle('off', !mine.ly.length || mine.tp >= 0));
+  document.querySelectorAll('.tile[data-k=tp]').forEach(t => t.classList.toggle('off', mine.cr < 0)); }
+function addScore(n, x, y) { score += n; $('#score').textContent = score + '점'; const max = CFG.stars[2]; $('#meter i').style.width = Math.min(100, score / max * 100) + '%';
+  document.querySelectorAll('#meter b').forEach((b, i) => { const on = score >= CFG.stars[i]; if (on && !b.classList.contains('on')) { sfx.cheer(); const [bx, by] = mid(b); bits(bx, by, ['⭐', '✨'], 10); } b.classList.toggle('on', on); });
+  if (x != null) floatTxt(x, y, '+' + n); }
+function newOrder() { const n = cakes < 2 ? 2 : cakes < 5 ? 3 : pick([3, 4]); order = { ly: Array.from({ length: n }, () => Math.random() * 4 | 0), cr: Math.random() * 3 | 0, tp: Math.random() * 4 | 0 }; mine = { ly: [], cr: -1, tp: -1 };
+  let g; do { g = pick(BIRDS); } while (g === guestId); guestId = g; $('#guest img').src = `assets/birds/${g}.webp`; anim($('#guest'), 'in', 500);
+  $('#orderCake').innerHTML = cakeHTML(order); $('#orderCard').classList.remove('veiled'); veilT = cakes >= CFG.veilFrom ? CFG.veilAfter + n * .5 : 0; renderMine(); }
+function serve() { if (!playing || $('#serve').disabled) return; const ok = mine.cr === order.cr && mine.tp === order.tp && mine.ly.length === order.ly.length && mine.ly.every((v, i) => v === order.ly[i]); const [x, y] = mid($('#guest'));
+  if (ok) { cakes++; served.push(guestId); let pts = 6 + order.ly.length * 2 + (cakes > CFG.veilFrom && !peeks ? 3 : 0); if (cheerT > 0) pts *= 2; addScore(pts, x, y - 40); sfx.ok(); anim($('#guest'), 'yay', 700); bits(x, y, ['💗', '🎂', '✨', '🎉'], 10);
+    for (let i = 0; i < 3; i++) setTimeout(() => addBalloon(true), i * 150); peeks = 0; setTimeout(() => { if (playing) newOrder(); }, 650); mine = { ly: [], cr: -1, tp: -1 }; $('#serve').disabled = true; }
+  else { sfx.no(); anim($('#guest'), 'no', 450); floatTxt(x, y - 40, '다시 볼래?'); $('#orderCard').classList.remove('veiled'); veilT = veilT > 0 || cakes >= CFG.veilFrom ? 2.5 : 0; mine = { ly: [], cr: -1, tp: -1 }; renderMine(); } }
+
+/* 재료 버튼 */
+{ const row = (lbl, html) => `<div class="row"><span>${lbl}</span>${html}</div>`;
+  $('#tiles').innerHTML = row('빵', SPONGE.map((s, i) => `<button class="tile" data-k="ly" data-i="${i}"><i style="--c:${s[1]}"></i>${s[0]}</button>`).join('') + `<button class="tile undo" data-k="undo">↩ 다시</button>`)
+    + row('크림', CREAM.map((s, i) => `<button class="tile" data-k="cr" data-i="${i}"><i class="cream" style="--c:${s[1]}"></i>${s[0]}</button>`).join('') ) + row('장식', TOP.map((s, i) => `<button class="tile" data-k="tp" data-i="${i}"><em>${s}</em></button>`).join(''));
+  $('#tiles').addEventListener('pointerdown', e => { const t = e.target.closest('.tile'); if (!t || !playing) return; audio(); const k = t.dataset.k, i = +t.dataset.i;
+    if (k === 'undo') { mine = { ly: [], cr: -1, tp: -1 }; sfx.tap(); } else if (t.classList.contains('off')) { sfx.no(); return; } else if (k === 'ly') { mine.ly.push(i); sfx.tap(); } else if (k === 'cr') { mine.cr = i; sfx.tap(); } else { mine.tp = i; sfx.tap(); }
+    renderMine(); }); }
+$('#serve').addEventListener('pointerdown', () => { audio(); serve(); });
+$('#guest').addEventListener('pointerdown', () => { audio(); serve(); });
+$('#orderCard').addEventListener('pointerdown', () => { if (!playing || !$('#orderCard').classList.contains('veiled')) return; $('#orderCard').classList.remove('veiled'); veilT = 2; peeks++; sfx.tap(); });
+
+/* ---------- 소민이 풍선 ---------- */
+const popEl = $('#pop');
+function addBalloon(gold) { if (!playing) return; if (!gold && popEl.querySelectorAll('.bal').length >= CFG.balloonMax) return; const b = document.createElement('div'); b.className = 'bal'; b.style.left = rnd(18, 82) + '%'; b.style.setProperty('--c', gold ? '#FFD45E' : pick(BCOL)); b.style.setProperty('--t', rnd(7, 10) + 's');
+  b.innerHTML = `<div class="b">${gold ? '⭐' : ''}</div>`; b.dataset.g = gold ? 1 : 0; b.addEventListener('animationend', e => { if (e.animationName === 'rise') b.remove(); }); popEl.appendChild(b); }
+popEl.addEventListener('pointerdown', e => { audio(); const b = e.target.closest('.bal');
+  if (!b) { bits(e.clientX, e.clientY, ['✨'], 4, 9); return; } if (!playing) return; const r = b.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.width * .6, gold = b.dataset.g === '1'; b.remove(); sfx.pop(); pops++;
+  bits(x, y, gold ? ['⭐', '🌟', '✨'] : ['🎉', '✨', '💗', '🎊'], 9, 20); addScore(gold ? 2 : 1, x, y);
+  if (cheerT <= 0) { cheer++; $('#gauge i').style.width = cheer / CFG.cheerNeed * 100 + '%'; if (cheer >= CFG.cheerNeed) { cheer = 0; cheerT = CFG.cheerSec; $('#bake').classList.add('cheer'); $('#cheerTag').classList.remove('hide'); sfx.cheer(); const [gx, gy] = mid($('#bake')); bits(gx, gy, ['💗', '⭐', '🎉'], 16, 40); } } });
+
+/* ---------- 진행 ---------- */
+function tick(now) { if (!playing) return; const dt = Math.min(.1, (now - lastT) / 1000); lastT = now; const prev = Math.ceil(tLeft); tLeft -= dt; const cur = Math.max(0, Math.ceil(tLeft)); $('#time').textContent = cur; if (cur !== prev && cur <= 5 && cur > 0) sfx.tick();
+  if (veilT > 0) { veilT -= dt; if (veilT <= 0) $('#orderCard').classList.add('veiled'); }
+  if (cheerT > 0) { cheerT -= dt; $('#gauge i').style.width = Math.max(0, cheerT / CFG.cheerSec * 100) + '%'; if (cheerT <= 0) { $('#bake').classList.remove('cheer'); $('#cheerTag').classList.add('hide'); } }
+  if (tLeft <= 0) { end(); return; } loop = requestAnimationFrame(tick); }
+function begin() { audio(); $('#title').classList.add('hide'); $('#result').classList.add('hide'); const c = $('#count'); c.classList.remove('hide'); let n = 3; $('#cd').textContent = n; sfx.tick();
+  const iv = setInterval(() => { n--; if (n > 0) { $('#cd').textContent = n; sfx.tick(); } else { clearInterval(iv); c.classList.add('hide'); startPlay(); } }, 800); }
+function startPlay() { playing = true; tLeft = CFG.time; score = cakes = pops = cheer = peeks = 0; cheerT = 0; served = []; addScore(0); $('#gauge i').style.width = '0%'; popEl.querySelectorAll('.bal').forEach(b => b.remove()); $('#bake').classList.remove('cheer'); $('#cheerTag').classList.add('hide');
+  newOrder(); addBalloon(); clearInterval(balIv); balIv = setInterval(addBalloon, CFG.balloonEvery); lastT = performance.now(); loop = requestAnimationFrame(tick); sfx.ok(); }
+function stop() { playing = false; cancelAnimationFrame(loop); clearInterval(balIv); }
+function end() { stop(); const st = CFG.stars.filter(s => score >= s).length; $('#rH').textContent = st === 3 ? '최고의 파티!' : st ? '파티 준비 완료!' : '파티 시작!'; $('#rS').textContent = '★'.repeat(st) + '☆'.repeat(3 - st);
+  let best = 0; try { best = +localStorage.getItem('omok-party-best') || 0; if (score > best) localStorage.setItem('omok-party-best', score); } catch (e) {}
+  $('#rP').innerHTML = `둘이 합쳐 ${score}점${score > best && best ? ' (새 기록!)' : ''}<br>유민이 케이크 ${cakes}개 · 소민이 풍선 ${pops}개`;
+  $('#guests').innerHTML = served.slice(-14).map((g, i) => `<img src="assets/birds/${g}.webp" alt="" style="animation-delay:${-i * .13}s">`).join(''); $('#result').classList.remove('hide'); sfx.end();
+  for (let k = 0; k < 6; k++) setTimeout(() => bits(rnd(.1, .9) * innerWidth, rnd(.1, .5) * innerHeight, ['🎉', '🎊', '⭐', '💗'], 10, 26), k * 220); }
+$('#go').onclick = begin; $('#again').onclick = begin; $('#home2').onclick = () => { $('#result').classList.add('hide'); $('#title').classList.remove('hide'); };
+$('#quit').onclick = () => { stop(); popEl.querySelectorAll('.bal').forEach(b => b.remove()); $('#title').classList.remove('hide'); };
+$('#swap').onclick = () => { $('#main').classList.toggle('swap'); $('#duo').classList.toggle('swap'); sfx.tap(); };
+$('#back').onclick = () => { location.href = 'games.html'; };
+addEventListener('contextmenu', e => e.preventDefault()); document.addEventListener('gesturestart', e => e.preventDefault());
+window.__party = { get order() { return order; }, CFG };
+</script>
+</body>
+</html>
